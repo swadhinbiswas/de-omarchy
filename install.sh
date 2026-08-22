@@ -150,6 +150,16 @@ log "Writing /etc/environment.d/10-de-omarchy.conf"
 sudo mkdir -p /etc/environment.d
 printf 'OMARCHY_PATH=%s\n' "$RUNTIME" | sudo tee /etc/environment.d/10-de-omarchy.conf >/dev/null
 
+# Symlink key commands into /usr/bin so sudo/polkit can find them (omarchy-dns
+# requires root, and the shell IPC commands need to be on the system PATH).
+log "Symlinking key commands to /usr/bin"
+for cmd in omarchy-dns omarchy-menu omarchy-shell omarchy-theme-set omarchy-theme-list \
+           omarchy-theme-bg-set omarchy-theme-bg-next omarchy-theme-refresh \
+           omarchy-capture-screenshot omarchy-capture-region omarchy-capture-text \
+           omarchy-system-lock omarchy-restart-shell; do
+  [[ -f "$RUNTIME/bin/$cmd" ]] && sudo ln -sf "$RUNTIME/bin/$cmd" "/usr/bin/$cmd" 2>/dev/null
+done
+
 # ----------------------------------------------------------------------------
 # 5. User config hooks (additive only)
 # ----------------------------------------------------------------------------
