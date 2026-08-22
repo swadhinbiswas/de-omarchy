@@ -10,6 +10,10 @@
 
 local require_optional = require("default.hypr.require_optional")
 
+-- Omarchy's shared helpers — defines the global `o` (o.bind / o.window / etc.)
+-- Without this, every downstream module that uses `o` fails with a nil error.
+require("default.hypr.helpers")
+
 -- Environment: OMARCHY_PATH, PATH with $OMARCHY_PATH/bin first, Wayland flags.
 require("default.hypr.envs")
 
