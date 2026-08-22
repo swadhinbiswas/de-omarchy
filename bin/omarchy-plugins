@@ -1,0 +1,87 @@
+#!/bin/bash
+# omarchy-plugins — browse and install plugins from the de-omarchy registry
+# Usage: omarchy-plugins [list|install|search|info] [plugin-name]
+set -euo pipefail
+
+REGISTRY="${OMARCHY_PATH:-/usr/share/de-omarchy}/registry.json"
+PLUGIN_DIR="$HOME/.config/omarchy/plugins"
+
+ACTION="${1:-list}"
+QUERY="${2:-}"
+
+log() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
+err() { printf '\033[1;31mERR:\033[0m %s\n' "$*" >&2; exit 1; }
+
+[[ -f "$REGISTRY" ]] || err "Registry not found at $REGISTRY"
+
+list_plugins() {
+  python3 -c "
+import json, sys
+with open('$REGISTRY') as f: r = json.load(f)
+for p in r.get('plugins', []):
+    installed = '$PLUGIN_DIR/' + p['id'].split('.')[-1]
+    import os
+    status = 'installed' if os.path.isdir(installed) else 'available'
+    print(f\"  {p['id']:40s} {p['category']:12s} {p['status']:8s} [{status}]\")
+"
+}
+
+search_plugins() {
+  python3 -c "
+import json, sys
+with open('$REGISTRY') as f: r = json.load(f)
+q = '$QUERY'.lower()
+for p in r.get('plugins', []):
+    searchable = (p['name'] + ' ' + p['description'] + ' ' + ' '.join(p.get('tags', []))).lower()
+    if q in searchable:
+        print(f\"  {p['id']:40s} {p['name']}\")
+        print(f\"    {p['description']}\")
+        print()
+"
+}
+
+show_info() {
+  python3 -c "
+import json
+with open('$REGISTRY') as f: r = json.load(f)
+for p in r.get('plugins', []):
+    if p['id'] == '$QUERY' or p['name'].lower() == '$QUERY'.lower():
+        print(f\"Name:        {p['name']}\")
+        print(f\"ID:          {p['id']}\")
+        print(f\"Description: {p['description']}\")
+        print(f\"Author:      {p['author']}\")
+        print(f\"Category:    {p['category']}\")
+        print(f\"Tags:        {', '.join(p.get('tags', []))}\")
+        print(f\"Status:      {p['status']}\")
+        print(f\"Kind:        {p['kind']}\")
+        print(f\"Install:     {p['installCommand']}\")
+        exit(0)
+print('Plugin not found: $QUERY')
+"
+}
+
+install_plugin() {
+  local cmd
+  cmd=$(python3 -c "
+import json
+with open('$REGISTRY') as f: r = json.load(f)
+for p in r.get('plugins', []):
+    if p['id'] == '$QUERY' or p['name'].lower() == '$QUERY'.lower():
+        print(p['installCommand'])
+        exit(0)
+print('NOT_FOUND')
+")
+  [[ "$cmd" == "NOT_FOUND" ]] && err "Plugin not found: $QUERY"
+  log "Installing: $QUERY"
+  mkdir -p "$PLUGIN_DIR"
+  eval "$cmd"
+  log "Done. Restart the shell to load: pkill -x quickshell"
+}
+
+case "$ACTION" in
+  list)    list_plugins ;;
+  search)  [[ -z $QUERY ]] && err "Usage: omarchy-plugins search <query>"; search_plugins ;;
+  info)    [[ -z $QUERY ]] && err "Usage: omarchy-plugins info <plugin-id>"; show_info ;;
+  install) [[ -z $QUERY ]] && err "Usage: omarchy-plugins install <plugin-id>"; install_plugin ;;
+  *)       echo "Usage: omarchy-plugins [list|install|search|info] [plugin-name]" ;;
+esac

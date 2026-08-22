@@ -1,0 +1,116 @@
+{
+  "name": "de-omarchy plugins",
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "id": "deomarchy.sysmon",
+      "name": "System Monitor",
+      "description": "CPU, RAM, disk, GPU temp, network in bar",
+      "author": "de-omarchy",
+      "category": "System",
+      "tags": ["monitoring", "bar-widget"],
+      "kind": "bar-widget",
+      "status": "stable",
+      "installCommand": "cp -r shell/plugins/sysmon ~/.config/omarchy/plugins/"
+    },
+    {
+      "id": "deomarchy.docker-status",
+      "name": "Docker Status",
+      "description": "Running container count, click to open lazydocker",
+      "author": "de-omarchy",
+      "category": "System",
+      "tags": ["docker", "containers", "bar-widget"],
+      "kind": "bar-widget",
+      "status": "stable",
+      "installCommand": "cp -r shell/plugins/docker-status ~/.config/omarchy/plugins/"
+    },
+    {
+      "id": "deomarchy.power-profile",
+      "name": "Power Profile",
+      "description": "Toggle performance/balanced/powersave",
+      "author": "de-omarchy",
+      "category": "System",
+      "tags": ["power", "battery", "bar-widget"],
+      "kind": "bar-widget",
+      "status": "stable",
+      "installCommand": "cp -r shell/plugins/power-profile ~/.config/omarchy/plugins/"
+    },
+    {
+      "id": "deomarchy.wallpaper-manager",
+      "name": "Wallpaper Manager",
+      "description": "Per-monitor wallpaper selection from theme backgrounds",
+      "author": "de-omarchy",
+      "category": "Desktop",
+      "tags": ["wallpaper", "panel"],
+      "kind": "panel",
+      "status": "stable",
+      "installCommand": "cp -r shell/plugins/wallpaper-manager ~/.config/omarchy/plugins/"
+    },
+    {
+      "id": "deomarchy.system-overview",
+      "name": "System Overview",
+      "description": "Full system stats panel (CPU/RAM/disk/GPU/network/uptime)",
+      "author": "de-omarchy",
+      "category": "System",
+      "tags": ["monitoring", "panel"],
+      "kind": "panel",
+      "status": "stable",
+      "installCommand": "cp -r shell/plugins/system-overview ~/.config/omarchy/plugins/"
+    },
+    {
+      "id": "deomarchy.monitor-manager",
+      "name": "Monitor Manager",
+      "description": "Visual multi-monitor arrangement (drag, rotate, scale)",
+      "author": "de-omarchy",
+      "category": "Desktop",
+      "tags": ["monitor", "display", "panel"],
+      "kind": "panel",
+      "status": "stable",
+      "installCommand": "cp -r monitor-manager ~/.config/omarchy/plugins/ && ln -sf ~/.config/omarchy/plugins/monitor-manager/shell.qml ~/.config/omarchy/plugins/monitor-manager/main.qml"
+    },
+    {
+      "id": "lacuna.shell-suite",
+      "name": "Lacuna",
+      "description": "Complete visual shell with custom bar, sidebar, system controls",
+      "author": "OldJobobo",
+      "category": "Desktop",
+      "tags": ["bar", "quickshell", "suite"],
+      "kind": "suite",
+      "status": "beta",
+      "installCommand": "git clone https://github.com/OldJobobo/lacuna-omarchy-plugins.git \"$HOME/lacuna\" && cd \"$HOME/lacuna\" && ./scripts/lacuna"
+    },
+    {
+      "id": "omarchy.omni",
+      "name": "Omni",
+      "description": "AI-powered launcher and productivity tools",
+      "author": "bjarneo",
+      "category": "Productivity",
+      "tags": ["launcher", "ai"],
+      "kind": "plugin",
+      "status": "stable",
+      "installCommand": "git clone https://github.com/bjarneo/omarchy-shell-plugins.git \"$HOME/omarchy-plugins\" && cd \"$HOME/omarchy-plugins\" && ./install.sh omni"
+    },
+    {
+      "id": "omarchy.quickapps-hud",
+      "name": "QuickApps HUD",
+      "description": "Quick application launcher with HUD overlay",
+      "author": "bjarneo",
+      "category": "Desktop",
+      "tags": ["launcher", "quickshell"],
+      "kind": "plugin",
+      "status": "stable",
+      "installCommand": "git clone https://github.com/bjarneo/omarchy-shell-plugins.git \"$HOME/omarchy-plugins\" && cd \"$HOME/omarchy-plugins\" && ./install.sh quickapps-hud"
+    },
+    {
+      "id": "omarchy.overview",
+      "name": "System Overview",
+      "description": "System resource monitor with process list",
+      "author": "AyushKr2003",
+      "category": "System",
+      "tags": ["monitoring", "system"],
+      "kind": "plugin",
+      "status": "stable",
+      "installCommand": "git clone https://github.com/AyushKr2003/omarchy-overview.git \"$HOME/omarchy-overview\" && cd \"$HOME/omarchy-overview\" && ./install.sh"
+    }
+  ]
+}
