@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "deomarchy.wallpaper-manager",
+  "name": "Wallpaper Manager",
+  "version": "1.0.0",
+  "author": "De-Omarchy",
+  "description": "Browse and set wallpapers from the current theme",
+  "kinds": [
+    "panel"
+  ],
+  "entryPoints": {
+    "panel": "WallpaperManager.qml"
+  }
+}

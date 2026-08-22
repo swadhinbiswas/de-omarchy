@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "deomarchy.docker-status",
+  "name": "Docker Status",
+  "version": "1.0.0",
+  "author": "De-Omarchy",
+  "description": "Shows running Docker container count and unhealthy status",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "DockerStatus.qml"
+  },
+  "barWidget": {
+    "displayName": "Docker Status",
+    "description": "Running container count and unhealthy warnings",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

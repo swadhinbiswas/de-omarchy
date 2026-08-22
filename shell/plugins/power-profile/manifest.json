@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "deomarchy.power-profile",
+  "name": "Power Profile",
+  "version": "1.0.0",
+  "author": "De-Omarchy",
+  "description": "Shows and cycles through power profiles (performance/balanced/powersave)",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "PowerProfile.qml"
+  },
+  "barWidget": {
+    "displayName": "Power Profile",
+    "description": "Current power profile with click to cycle",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

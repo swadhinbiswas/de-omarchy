@@ -178,6 +178,23 @@ if [[ -d $REPO_DIR/config/omarchy ]]; then
   rsync -a --ignore-existing "$REPO_DIR/config/omarchy/" "$HOME/.config/omarchy/"
 fi
 
+# Deploy terminal/starship/nvim/opencode configs (only if user doesn't have them)
+log "Deploying UI configs (never overwrites existing)"
+for pair in "kitty/kitty.conf:.config/kitty/kitty.conf" "starship/starship.toml:.config/starship.toml" "opencode/opencode.jsonc:.config/opencode/opencode.jsonc"; do
+  src="$REPO_DIR/config/${pair%%:*}"
+  dst="$HOME/${pair##*:}"
+  if [[ -f $src ]] && [[ ! -f $dst ]]; then
+    mkdir -p "$(dirname "$dst")"
+    cp "$src" "$dst"
+    log "deployed $dst"
+  fi
+done
+# Neovim config: rsync with ignore-existing (preserves user's plugins/config)
+if [[ -d $REPO_DIR/config/nvim ]]; then
+  mkdir -p "$HOME/.config/nvim"
+  rsync -a --ignore-existing "$REPO_DIR/config/nvim/" "$HOME/.config/nvim/"
+fi
+
 # Append the marked activation block to hyprland.lua (idempotent).
 HYPR_MAIN="$HOME/.config/hypr/hyprland.lua"
 if [[ ! -f $HYPR_MAIN ]]; then

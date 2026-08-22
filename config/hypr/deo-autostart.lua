@@ -1,0 +1,5 @@
+hl.on("hyprland.start", function()
+  hl.exec_cmd("pkill -f 'quickshell.*-c moonshell' 2>/dev/null; pkill -f 'moonshell shell' 2>/dev/null; pkill -x hypridle 2>/dev/null; pkill -f 'wl-paste --type text --watch cliphist' 2>/dev/null; pkill -f 'wl-paste --type image --watch cliphist' 2>/dev/null; wl-paste --type text --watch cliphist store &; wl-paste --type image --watch cliphist store &; true")
+end)
+hl.exec_cmd("omarchy-launch-shell")
+require("default.hypr.autostart")

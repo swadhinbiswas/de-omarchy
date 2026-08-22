@@ -1,0 +1,192 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "tokenrouter": {
+      "api": "https://api.tokenrouter.com/v1",
+      "name": "TokenRouter",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://api.tokenrouter.com/v1",
+        "apiKey": "{env:TOKENROUTER_API_KEY}"
+      },
+      "models": {
+        "z-ai/glm-5.2-free": {
+          "id": "z-ai/glm-5.2-free",
+          "name": "Z.AI: GLM 5.2 (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 8192
+          }
+        },
+        "MiniMax-M3": {
+          "id": "MiniMax-M3",
+          "name": "MiniMax M3",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
+        },
+        "moonshotai/kimi-k3-free": {
+          "id": "moonshotai/kimi-k3-free",
+          "name": "MoonshotAI: Kimi K3 (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 262144,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "aihubmix": {
+      "api": "https://aihubmix.com/v1",
+      "name": "AiHubMix",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://aihubmix.com/v1",
+        "apiKey": "***REDACTED-ROTATE-NOW***"
+      },
+      "models": {
+        "coding-kimi-k3-free": {
+          "id": "coding-kimi-k3-free",
+          "name": "Kimi K3 Code (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "agentrouter": {
+      "api": "https://agentrouter.org/v1",
+      "name": "AgentRouter (OpenAI Compatible)",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://agentrouter.org/v1",
+        "apiKey": "***REDACTED-ROTATE-NOW***"
+      },
+      "models": {
+        "glm-5.2": {
+          "id": "glm-5.2",
+          "name": "GLM 5.2",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "inferx": {
+      "api": "https://model.inferx.net/endpoints/v1",
+      "name": "InferX",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://model.inferx.net/endpoints/v1",
+        "apiKey": "***REDACTED-ROTATE-NOW***"
+      },
+      "models": {
+        "deepseek-v4-flash": {
+          "id": "deepseek-v4-flash",
+          "name": "DeepSeek V4 Flash",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "zenmux": {
+      "api": "https://zenmux.ai/api/v1",
+      "name": "Zenmux",
+      "npm": "@ai-sdk/openai-compatible",
+      "models": {
+        "z-ai/glm-5.2-free": {
+          "id": "z-ai/glm-5.2-free",
+          "name": "Z.AI: GLM 5.2 (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 8192
+          }
+        },
+        "z-ai/glm-4.7-flash-free": {
+          "id": "z-ai/glm-4.7-flash-free",
+          "name": "Z.AI: GLM 4.7 Flash (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
+        },
+        "z-ai/glm-4.6v-flash-free": {
+          "id": "z-ai/glm-4.6v-flash-free",
+          "name": "Z.AI: GLM 4.6V Flash (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
+        },
+        "moonshotai/kimi-k2.7-code-free": {
+          "id": "moonshotai/kimi-k2.7-code-free",
+          "name": "MoonshotAI: Kimi K2.7 Code (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 262144,
+            "output": 8192
+          }
+        },
+        "stepfun/step-3.7-flash-free": {
+          "id": "stepfun/step-3.7-flash-free",
+          "name": "StepFun: Step 3.7 Flash (Free)",
+          "cost": {
+            "input": 0,
+            "output": 0
+          },
+          "limit": {
+            "context": 256000,
+            "output": 8192
+          }
+        }
+      }
+    }
+  },
+  "model": "tokenrouter/moonshotai/kimi-k3-free",
+  "skills": {
+    "paths": ["/home/swadhin/skills"]
+  }
+}

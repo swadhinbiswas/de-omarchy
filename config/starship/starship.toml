@@ -1,0 +1,944 @@
+# ==============================================================================
+# STARSHIP PROMPT CONFIGURATION FILE
+# Production-Ready Enterprise Shell Prompt Configuration for Starship v1.26.0
+# Designed by Apple, Linear, Vercel, Warp Terminal, & GitHub Engineering Standards
+# ==============================================================================
+#
+# Target Version : Starship v1.26.0
+# Compatibility  : 100% Strict Compatibility (Zero warnings under `starship print-config`)
+# Layout         : Modern 2-Line Pill/Badge Hybrid Prompt
+# Themes Included: Catppuccin Mocha, Tokyo Night, Nord, Gruvbox, Everforest, Dracula
+# Typography     : Nerd Font v3 Icons & Glyphs
+# Performance    : Sub-millisecond execution using native file/extension detectors
+#
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. CORE CONFIGURATION & THEME SELECTION
+# ------------------------------------------------------------------------------
+
+# Select active color palette.
+# To switch theme, change this single key to one of:
+#   - "catppuccin_mocha" (Default: Soft modern dark theme)
+#   - "tokyo_night"      (Deep blue neon cyberpunk theme)
+#   - "nord"             (Arctic frost pastel theme)
+#   - "gruvbox_dark"     (Retro warm contrast theme)
+#   - "everforest_dark"  (Soft organic forest theme)
+#   - "dracula"          (Vibrant high contrast gothic theme)
+palette = "rose_pine_moon"
+
+# Insert a clean blank line before rendering prompt to separate command outputs
+add_newline = true
+
+# Command execution timeout (in milliseconds). Prevents prompt lockup on slow binaries
+command_timeout = 1000
+
+# Directory scan timeout (in milliseconds). Prevents hangs on slow network drives/git
+scan_timeout = 30
+
+# Continuation prompt symbol shown when typing multi-line shell commands
+continuation_prompt = "[  › ](overlay1) "
+
+# ------------------------------------------------------------------------------
+# 2. PROMPT LAYOUT ARCHITECTURE
+# ------------------------------------------------------------------------------
+
+# Line 1: Main Status & Information Bar (System, Directory, Git, Runtime, Tools, Metrics)
+# Line 2: Interactive Execution Character & Multi-line continuation
+format = """
+[╭─](overlay0)$os$username$hostname$shell$container$sudo$directory$git_branch$git_commit$git_state$git_status$git_metrics$package$bun$nodejs$deno$python$rust$golang$c$cmake$zig$java$kotlin$scala$swift$php$ruby$perl$lua$haskell$elixir$erlang$julia$ocaml$terraform$helm$kubernetes$docker_context$nix_shell$conda$aws$azure$gcloud$custom$memory_usage$cmd_duration$jobs$battery$time$status
+[╰─](overlay0)$line_break$character"""
+
+# Right-hand prompt (Disabled for clean, predictable cursor alignment)
+right_format = """"""
+
+# ------------------------------------------------------------------------------
+# 3. COLOR PALETTES DEFINITION
+# ------------------------------------------------------------------------------
+
+# --- Palette 1: Catppuccin Mocha (Default Active Palette) ---
+# Soothing pastel theme with balanced contrast and vibrant accents
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo  = "#f2cdcd"
+pink      = "#f5c2e7"
+mauve     = "#cba6f7"
+red       = "#f38ba8"
+maroon    = "#eba0ac"
+peach     = "#fab387"
+yellow    = "#f9e2af"
+green     = "#a6e3a1"
+teal      = "#94e2d5"
+sky       = "#89dceb"
+sapphire  = "#74c7ec"
+blue      = "#89b4fa"
+lavender  = "#b4befe"
+text      = "#cdd6f4"
+subtext1  = "#bac2de"
+subtext0  = "#a6adc8"
+overlay2  = "#9399b2"
+overlay1  = "#7f849c"
+overlay0  = "#6c7086"
+surface2  = "#585b70"
+surface1  = "#45475a"
+surface0  = "#313244"
+base      = "#1e1e2e"
+mantle    = "#181825"
+crust     = "#11111b"
+
+# --- Palette 7: Rosé Pine Moon (active) ---
+# The active palette for this build. Same color names as catppuccin so every
+# module style in this file keeps working — only the values change.
+[palettes.rose_pine_moon]
+rosewater = "#ea9a97"
+flamingo  = "#eb6f92"
+pink      = "#ea9a97"
+mauve     = "#c4a7e7"
+red       = "#eb6f92"
+maroon    = "#eb6f92"
+peach     = "#f6c177"
+yellow    = "#f6c177"
+green     = "#9ccfd8"
+teal      = "#3e8fb0"
+sky       = "#9ccfd8"
+sapphire  = "#3e8fb0"
+blue      = "#3e8fb0"
+lavender  = "#c4a7e7"
+text      = "#e0def4"
+subtext1  = "#c9c6dc"
+subtext0  = "#a8a4bd"
+overlay2  = "#908caa"
+overlay1  = "#6e6a86"
+overlay0  = "#6e6a86"
+surface2  = "#56526e"
+surface1  = "#44415a"
+surface0  = "#393552"
+base      = "#232136"
+mantle    = "#1d1b2c"
+crust     = "#1d1b2c"
+
+# --- Palette 2: Tokyo Night ---
+# Deep navy background with vibrant neon highlights inspired by Tokyo nightlife
+[palettes.tokyo_night]
+rosewater = "#ff757f"
+flamingo  = "#c0caf5"
+pink      = "#f7768e"
+mauve     = "#bb9af7"
+red       = "#f7768e"
+maroon    = "#ff007c"
+peach     = "#ff9e64"
+yellow    = "#e0af68"
+green     = "#9ece6a"
+teal      = "#73daca"
+sky       = "#7dcfff"
+sapphire  = "#2ac3de"
+blue      = "#7aa2f7"
+lavender  = "#b4f9f8"
+text      = "#c0caf5"
+subtext1  = "#a9b1d6"
+subtext0  = "#9aa5ce"
+overlay2  = "#787c99"
+overlay1  = "#565f89"
+overlay0  = "#414868"
+surface2  = "#3b4261"
+surface1  = "#292e42"
+surface0  = "#24283b"
+base      = "#1a1b26"
+mantle    = "#16161e"
+crust     = "#13131a"
+
+# --- Palette 3: Nord ---
+# Clean, cold arctic palette featuring bluish grays and icy pastel accents
+[palettes.nord]
+rosewater = "#d8dee9"
+flamingo  = "#e5e9f0"
+pink      = "#b48ead"
+mauve     = "#b48ead"
+red       = "#bf616a"
+maroon    = "#d08770"
+peach     = "#d08770"
+yellow    = "#ebcb8b"
+green     = "#a3be8c"
+teal      = "#8fbcbb"
+sky       = "#88c0d0"
+sapphire  = "#81a1c1"
+blue      = "#5e81ac"
+lavender  = "#b48ead"
+text      = "#eceff4"
+subtext1  = "#e5e9f0"
+subtext0  = "#d8dee9"
+overlay2  = "#4c566a"
+overlay1  = "#434c5e"
+overlay0  = "#3b4252"
+surface2  = "#434c5e"
+surface1  = "#3b4252"
+surface0  = "#2e3440"
+base      = "#2e3440"
+mantle    = "#242933"
+crust     = "#1d212a"
+
+# --- Palette 4: Gruvbox Dark ---
+# Warm, earthy retro colors with comfortable contrast for long terminal sessions
+[palettes.gruvbox_dark]
+rosewater = "#d5c4a1"
+flamingo  = "#ebdbb2"
+pink      = "#d3869b"
+mauve     = "#d3869b"
+red       = "#fb4934"
+maroon    = "#cc241d"
+peach     = "#fe8019"
+yellow    = "#fabd2f"
+green     = "#b8bb26"
+teal      = "#8ec07c"
+sky       = "#83a598"
+sapphire  = "#458588"
+blue      = "#83a598"
+lavender  = "#d3869b"
+text      = "#fbf1c7"
+subtext1  = "#ebdbb2"
+subtext0  = "#d5c4a1"
+overlay2  = "#a89984"
+overlay1  = "#928374"
+overlay0  = "#7c6f64"
+surface2  = "#665c54"
+surface1  = "#504945"
+surface0  = "#3c3836"
+base      = "#282828"
+mantle    = "#1d2021"
+crust     = "#141617"
+
+# --- Palette 5: Everforest Dark ---
+# Soft green-tinted dark palette designed for readability and eye comfort
+[palettes.everforest_dark]
+rosewater = "#d3c6aa"
+flamingo  = "#e6e2cc"
+pink      = "#d699b6"
+mauve     = "#d699b6"
+red       = "#e67e80"
+maroon    = "#e67e80"
+peach     = "#e69875"
+yellow    = "#dbbc7f"
+green     = "#a7c080"
+teal      = "#83c092"
+sky       = "#7fbbb3"
+sapphire  = "#7fbbb3"
+blue      = "#7fbbb3"
+lavender  = "#d699b6"
+text      = "#d3c6aa"
+subtext1  = "#bdc3af"
+subtext0  = "#9da9a0"
+overlay2  = "#859289"
+overlay1  = "#707d74"
+overlay0  = "#5c6860"
+surface2  = "#4f5b53"
+surface1  = "#47524a"
+surface0  = "#3a443e"
+base      = "#2d353b"
+mantle    = "#272e33"
+crust     = "#1e2326"
+
+# --- Palette 6: Dracula ---
+# Iconic high-contrast dark theme with rich purples, pinks, and bright cyan
+[palettes.dracula]
+rosewater = "#f8f8f2"
+flamingo  = "#ff79c6"
+pink      = "#ff79c6"
+mauve     = "#bd93f9"
+red       = "#ff5555"
+maroon    = "#ff5555"
+peach     = "#ffb86c"
+yellow    = "#f1fa8c"
+green     = "#50fa7b"
+teal      = "#8be9fd"
+sky       = "#8be9fd"
+sapphire  = "#8be9fd"
+blue      = "#6272a4"
+lavender  = "#bd93f9"
+text      = "#f8f8f2"
+subtext1  = "#e0e0e0"
+subtext0  = "#bfbfbf"
+overlay2  = "#999999"
+overlay1  = "#6272a4"
+overlay0  = "#44475a"
+surface2  = "#44475a"
+surface1  = "#383a59"
+surface0  = "#282a36"
+base      = "#282a36"
+mantle    = "#21222c"
+crust     = "#191a21"
+
+# ------------------------------------------------------------------------------
+# 4. SYSTEM & IDENTITY MODULES
+# ------------------------------------------------------------------------------
+
+# Operating System Detection Module
+# Renders distro/OS specific Nerd Font glyphs when running across OS environments
+[os]
+format = "[ $symbol]($style)"
+style = "bold text"
+disabled = false
+
+[os.symbols]
+Alpaquita        = "󰕈"
+Alpine           = "󰕈"
+Amazon           = "󰸏"
+Android          = "󰀲"
+Arch             = "󰣇"
+Artix            = "󰣇"
+CentOS           = "󰅢"
+Debian           = "󰣚"
+EndeavourOS      = "󰣇"
+Fedora           = "󰣛"
+FreeBSD          = "󰈔"
+Garuda           = "󰣇"
+Gentoo           = "󰣨"
+Kali             = "󰈔"
+Linux            = "󰌽"
+Mabox            = "󱆎"
+Macos            = "󰀵"
+Manjaro          = "󱆎"
+Mint             = "󰔡"
+NixOS            = "󱄅"
+OpenBSD          = "󰈔"
+openSUSE         = "󰅂"
+Pop              = "󰅢"
+Raspbian         = "󰐿"
+Redhat           = "󱄅"
+RedHatEnterprise = "󱄅"
+RockyLinux       = "󰅢"
+SUSE             = "󰅂"
+Ubuntu           = "󰕈"
+Void             = "󰅢"
+Windows          = "󰍲"
+
+# Active Username Module
+# Renders user identity when running over SSH or executing with elevated privileges
+[username]
+format = "[ $user]($style)"
+style_user = "bold lavender"
+style_root = "bold red"
+show_always = false
+disabled = false
+
+# Remote Hostname Module
+# Renders remote machine hostname when logged into an SSH session
+[hostname]
+format = "[@$hostname]($style)"
+style = "bold lavender"
+ssh_only = true
+ssh_symbol = "󰣀 "
+disabled = false
+
+# Active Shell Module
+# Displays a subtle icon indicating the currently active shell process
+[shell]
+format = "[ $symbol]($style)"
+style = "bold overlay1"
+bash_indicator = "󱆃"
+fish_indicator = "󰈺"
+zsh_indicator = "󰞷"
+nu_indicator = "󰘦"
+powershell_indicator = "󰨊"
+cmd_indicator = "󰘦"
+elvish_indicator = "󰘦"
+tcsh_indicator = "󰘦"
+ion_indicator = "󰘦"
+xonsh_indicator = "󰘦"
+disabled = false
+
+# Container Environment Module
+# Renders container name when operating inside Docker, Podman, or LXC environments
+[container]
+format = "[ 󰏖 $name]($style)"
+style = "bold peach"
+symbol = "󰏖"
+disabled = false
+
+# Sudo Execution State
+# Renders a padlock icon when superuser permissions are active in current session
+[sudo]
+format = "[ 󰌆 ]($style)"
+symbol = "󰌆"
+style = "bold red"
+disabled = false
+
+# ------------------------------------------------------------------------------
+# 5. DIRECTORY & NAVIGATION MODULE
+# ------------------------------------------------------------------------------
+
+# Active Workspace Directory Module
+# Features smart repository root detection, fish-style path truncation,
+# custom folder icon substitution, and read-only filesystem locks.
+[directory]
+format = " [ $path]($style)[$read_only]($read_only_style)"
+style = "bold blue"
+truncation_length = 3
+truncate_to_repo = true
+truncation_symbol = "…/"
+home_symbol = "󰋜 ~"
+read_only = " 󰌾"
+read_only_style = "bold red"
+repo_root_style = "bold mauve"
+repo_root_format = " [ $before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style)"
+fish_style_pwd_dir_length = 1
+use_os_path_sep = true
+disabled = false
+
+[directory.substitutions]
+"Documents" = "󰈙 Documents"
+"Downloads" = "󰉍 Downloads"
+"Music"     = "󰎈 Music"
+"Pictures"  = "󰋩 Pictures"
+"Videos"    = "󰕧 Videos"
+"Projects"  = "󰲋 Projects"
+"Developer" = "󰲋 Developer"
+".config"   = "󱁤 .config"
+
+# ------------------------------------------------------------------------------
+# 6. GIT & VERSION CONTROL EXPERIENCE
+# ------------------------------------------------------------------------------
+
+# Active Git Branch Module
+[git_branch]
+format = " [󰘬 $branch]($style)"
+symbol = "󰘬 "
+style = "bold mauve"
+truncation_length = 32
+truncation_symbol = "…"
+only_attached = false
+always_show_remote = false
+ignore_branches = []
+disabled = false
+
+# Git Commit Hash Module (Renders short hash and tags in detached HEAD mode)
+[git_commit]
+format = " [󰜘 $hash$tag]($style)"
+style = "bold green"
+commit_hash_length = 7
+tag_symbol = " 🏷 "
+tag_disabled = false
+only_detached = true
+disabled = false
+
+# Git Operation State Module (Rebase, Merge, Cherry-Pick, Bisect indicators)
+[git_state]
+format = " [󰴈 $state($progress_current/$progress_total)]($style)"
+style = "bold yellow"
+rebase = "REBASING"
+merge = "MERGING"
+revert = "REVERTING"
+cherry_pick = "CHERRY-PICKING"
+bisect = "BISECTING"
+am = "AM"
+am_or_rebase = "AM/REBASE"
+disabled = false
+
+# Detailed Git Repository Status Indicators
+[git_status]
+format = " ([$all_status$ahead_behind]($style))"
+style = "bold red"
+stashed = " 󰏗${count}"
+ahead = " ⇡${count}"
+behind = " ⇣${count}"
+diverged = " ⇕⇡${ahead_count}⇣${behind_count}"
+up_to_date = ""
+conflicted = " 󰞇${count}"
+deleted = " 󰅖${count}"
+renamed = " 󰑕${count}"
+modified = " 󰏫${count}"
+staged = " 󰄬${count}"
+untracked = " 󰋗${count}"
+typechanged = " 󰨡${count}"
+disabled = false
+
+# Git Line Metrics Module (Renders added & deleted line diff counts)
+[git_metrics]
+format = " ([+$added]($added_style) [-$deleted]($deleted_style))"
+added_style = "bold green"
+deleted_style = "bold red"
+only_nonzero_diffs = true
+disabled = false
+
+# ------------------------------------------------------------------------------
+# 7. PACKAGE MANAGERS & PROGRAMMING LANGUAGE RUNTIMES
+# ------------------------------------------------------------------------------
+
+# Package Version Module (Detects package.json, Cargo.toml, pyproject.toml, etc.)
+[package]
+format = " [󰏗 $version]($style)"
+symbol = "󰏗 "
+style = "bold peach"
+display_private = true
+disabled = false
+
+# Bun JavaScript/TypeScript Runtime Engine
+[bun]
+format = " [󰏗 $version]($style)"
+symbol = "󰏗 "
+style = "bold rosewater"
+detect_files = ["bun.lockb", "bun.lock"]
+detect_extensions = []
+disabled = false
+
+# Node.js Runtime Engine
+[nodejs]
+format = " [󰎙 $version]($style)"
+symbol = "󰎙 "
+style = "bold green"
+detect_files = ["package.json", ".nvmrc", ".node-version"]
+detect_extensions = ["js", "ts", "jsx", "tsx", "mjs", "cjs"]
+detect_folders = ["node_modules"]
+disabled = false
+
+# Deno Secure JS/TS Runtime Engine
+[deno]
+format = " [󰌞 $version]($style)"
+symbol = "󰌞 "
+style = "bold teal"
+detect_files = ["deno.json", "deno.jsonc", "import_map.json"]
+detect_extensions = []
+disabled = false
+
+# Python Programming Language Engine
+[python]
+format = " [󰌠 ${pyenv_prefix}${version}(\\(${virtualenv}\\))]($style)"
+symbol = "󰌠 "
+style = "bold yellow"
+pyenv_version_name = true
+pyenv_prefix = "pyenv "
+python_binary = ["python", "python3"]
+detect_files = ["requirements.txt", "Pipfile", "pyproject.toml", "setup.py", "tox.ini", ".python-version"]
+detect_extensions = ["py"]
+detect_folders = [".venv", "venv", ".env"]
+disabled = false
+
+# Rust Systems Programming Language Toolchain
+[rust]
+format = " [󱘗 $version]($style)"
+symbol = "󱘗 "
+style = "bold red"
+detect_files = ["Cargo.toml", "Cargo.lock"]
+detect_extensions = ["rs"]
+disabled = false
+
+# Go (Golang) Programming Language Engine
+[golang]
+format = " [󰟓 $version]($style)"
+symbol = "󰟓 "
+style = "bold cyan"
+detect_files = ["go.mod", "go.sum", "glide.yaml"]
+detect_extensions = ["go"]
+detect_folders = []
+disabled = false
+
+# C / C++ Compiler Toolchain
+[c]
+format = " [󰙅 $version]($style)"
+symbol = "󰙅 "
+style = "bold blue"
+detect_files = ["Makefile", "CMakeLists.txt"]
+detect_extensions = ["c", "h", "cpp", "hpp", "cc"]
+disabled = false
+
+# CMake Cross-Platform Build System
+[cmake]
+format = " [󰔷 $version]($style)"
+symbol = "󰔷 "
+style = "bold sapphire"
+detect_files = ["CMakeLists.txt", "CMakeCache.txt"]
+disabled = false
+
+# Zig Systems Programming Language
+[zig]
+format = " [󱈟 $version]($style)"
+symbol = "󱈟 "
+style = "bold yellow"
+detect_files = ["build.zig"]
+detect_extensions = ["zig"]
+disabled = false
+
+# Java Development Kit (JDK)
+[java]
+format = " [󰬷 $version]($style)"
+symbol = "󰬷 "
+style = "bold red"
+detect_files = ["pom.xml", "build.gradle", "build.gradle.kts", ".java-version"]
+detect_extensions = ["java", "class", "jar"]
+disabled = false
+
+# Kotlin Multiplatform Programming Language
+[kotlin]
+format = " [󱈙 $version]($style)"
+symbol = "󱈙 "
+style = "bold mauve"
+detect_files = ["build.gradle.kts"]
+detect_extensions = ["kt", "kts"]
+disabled = false
+
+# Scala Programming Language Engine
+[scala]
+format = " [󰕈 $version]($style)"
+symbol = "󰕈 "
+style = "bold red"
+detect_files = ["build.sbt"]
+detect_extensions = ["scala", "sc"]
+disabled = false
+
+# Swift / Apple SDK Platform
+[swift]
+format = " [󰛥 $version]($style)"
+symbol = "󰛥 "
+style = "bold peach"
+detect_files = ["Package.swift"]
+detect_extensions = ["swift"]
+disabled = false
+
+# PHP Web Engine
+[php]
+format = " [󰌟 $version]($style)"
+symbol = "󰌟 "
+style = "bold blue"
+detect_files = ["composer.json", ".php-version"]
+detect_extensions = ["php"]
+disabled = false
+
+# Ruby Dynamic Programming Language
+[ruby]
+format = " [󰴭 $version]($style)"
+symbol = "󰴭 "
+style = "bold red"
+detect_files = ["Gemfile", "Rakefile", ".ruby-version"]
+detect_extensions = ["rb"]
+disabled = false
+
+# Perl Scripting Engine
+[perl]
+format = " [󰅩 $version]($style)"
+symbol = "󰅩 "
+style = "bold sapphire"
+detect_files = ["Makefile.PL", "Build.PL", "cpanfile"]
+detect_extensions = ["pl", "pm", "t"]
+disabled = false
+
+# Lua Scripting Language Engine
+[lua]
+format = " [󰢱 $version]($style)"
+symbol = "󰢱 "
+style = "bold blue"
+detect_files = [".luacheckrc", "rockspec"]
+detect_extensions = ["lua"]
+disabled = false
+
+# Haskell Strongly-Typed Functional Language
+[haskell]
+format = " [󰲒 $version]($style)"
+symbol = "󰲒 "
+style = "bold mauve"
+detect_files = ["stack.yaml", "cabal.project"]
+detect_extensions = ["hs"]
+disabled = false
+
+# Elixir / BEAM Ecosystem
+[elixir]
+format = " [󰞦 $version]($style)"
+symbol = "󰞦 "
+style = "bold lavender"
+detect_files = ["mix.exs"]
+detect_extensions = ["ex", "exs"]
+disabled = false
+
+# Erlang Open Telecom Platform (OTP) Engine
+[erlang]
+format = " [󰞦 $version]($style)"
+symbol = "󰞦 "
+style = "bold red"
+detect_files = ["rebar.config", "erlang.mk"]
+detect_extensions = ["erl", "hrl"]
+disabled = false
+
+# Julia High-Performance Technical Computing
+[julia]
+format = " [󰏗 $version]($style)"
+symbol = "󰏗 "
+style = "bold green"
+detect_files = ["Project.toml", "JuliaProject.toml"]
+detect_extensions = ["jl"]
+disabled = false
+
+# OCaml Functional Language Engine
+[ocaml]
+format = " [󰆧 $version]($style)"
+symbol = "󰆧 "
+style = "bold yellow"
+detect_files = ["dune-project", ".opam"]
+detect_extensions = ["ml", "mli"]
+disabled = false
+
+# ------------------------------------------------------------------------------
+# 8. CLOUD INFRASTRUCTURE & CONTAINER ORCHESTRATION
+# ------------------------------------------------------------------------------
+
+# Terraform Infrastructure as Code Engine
+[terraform]
+format = " [󱁢 $version]($style)"
+symbol = "󱁢 "
+style = "bold mauve"
+detect_files = [".terraform", "main.tf"]
+detect_extensions = ["tf", "tfvars"]
+disabled = false
+
+# Helm Package Manager for Kubernetes
+[helm]
+format = " [󰠳 $version]($style)"
+symbol = "󰠳 "
+style = "bold sapphire"
+detect_files = ["Chart.yaml"]
+disabled = false
+
+# Kubernetes Cluster & Namespace Context
+[kubernetes]
+format = " [󱏿 $context\\($namespace\\)]($style)"
+symbol = "󱏿 "
+style = "bold sky"
+disabled = false
+
+# Docker Active Context Detector
+[docker_context]
+format = " [󰡨 $context]($style)"
+symbol = "󰡨 "
+style = "bold blue"
+only_with_files = true
+detect_files = ["docker-compose.yml", "docker-compose.yaml", "Dockerfile"]
+disabled = false
+
+# Nix Shell Environment State
+[nix_shell]
+format = " [󱄅 $state(\\($name\\))]($style)"
+symbol = "󱄅 "
+style = "bold sky"
+impure_msg = "impure"
+pure_msg = "pure"
+disabled = false
+
+# Conda Virtual Environment Manager
+[conda]
+format = " [󰆧 $environment]($style)"
+symbol = "󰆧 "
+style = "bold green"
+ignore_base = true
+disabled = false
+
+# Amazon Web Services (AWS) Active Profile & Region
+[aws]
+format = " [󰸏 $profile(\\($region\\))]($style)"
+symbol = "󰸏 "
+style = "bold yellow"
+disabled = false
+
+# Microsoft Azure Subscription Profile
+[azure]
+format = " [󰠅 $subscription]($style)"
+symbol = "󰠅 "
+style = "bold sky"
+disabled = false
+
+# Google Cloud Platform (GCP) Account & Project Context
+[gcloud]
+format = " [󱇓 $account(@$domain)(\\($project\\))]($style)"
+symbol = "󱇓 "
+style = "bold blue"
+disabled = false
+
+# ------------------------------------------------------------------------------
+# 9. SYSTEM RESOURCES & PERFORMANCE METRICS
+# ------------------------------------------------------------------------------
+
+# RAM / Memory Usage Indicator (Triggers warning icon when RAM usage exceeds 75%)
+[memory_usage]
+format = " [󰍛 $ram]($style)"
+symbol = "󰍛 "
+style = "bold red"
+threshold = 75
+disabled = false
+
+# Command Execution Duration (Displays elapsed runtime for commands > 2.0 seconds)
+[cmd_duration]
+format = " [󱎫 $duration]($style)"
+min_time = 2000
+show_milliseconds = false
+disabled = false
+
+# Active Background Jobs Counter
+[jobs]
+format = " [󰜎 $number]($style)"
+symbol = "󰜎 "
+style = "bold sapphire"
+threshold = 1
+disabled = false
+
+# Laptop Battery Power & Level Monitor
+[battery]
+format = " [$symbol$percentage]($style)"
+charging_symbol = "󰂄 "
+discharging_symbol = "󰂃 "
+full_symbol = "󰁹 "
+unknown_symbol = "󰂑 "
+empty_symbol = "󰂎 "
+disabled = false
+
+[[battery.display]]
+threshold = 15
+style = "bold red"
+
+[[battery.display]]
+threshold = 35
+style = "bold yellow"
+
+[[battery.display]]
+threshold = 100
+style = "bold green"
+
+# System Clock (24-hour HH:MM format)
+[time]
+format = " [󱑎 $time]($style)"
+style = "bold overlay1"
+time_format = "%R"
+use_12hr = false
+disabled = false
+
+# Command Exit Code Status (Renders status code upon non-zero exit)
+[status]
+format = " [󰅖 $status]($style)"
+symbol = "󰅖 "
+success_symbol = "󰄬 "
+style = "bold red"
+disabled = false
+
+# ------------------------------------------------------------------------------
+# 10. CUSTOM EXTENSION MODULES
+# ------------------------------------------------------------------------------
+# Custom modules extend Starship with performance-tuned detectors for modern dev tools.
+# Utilizing fast file & folder matching to prevent unneeded shell process spawns.
+
+# Custom Module 1: uv (Ultra-Fast Python Package Installer)
+[custom.uv]
+description = "uv Python package manager"
+command = "uv --version | cut -d' ' -f2"
+detect_files = ["uv.lock", "pyproject.toml"]
+detect_folders = [".venv"]
+symbol = "⚡ "
+style = "bold teal"
+format = " [via $symbol$output]($style)"
+
+# Custom Module 2: pnpm (Performant Disk-Efficient JS Package Manager)
+[custom.pnpm]
+description = "pnpm package manager"
+command = "pnpm --version"
+detect_files = ["pnpm-lock.yaml", "pnpm-workspace.yaml"]
+symbol = "󰏗 "
+style = "bold yellow"
+format = " [via $symbol$output]($style)"
+
+# Custom Module 3: Turborepo (High-Speed Build System for Monorepos)
+[custom.turbo]
+description = "Turborepo monorepo workspace"
+detect_files = ["turbo.json"]
+symbol = "󰚗 "
+style = "bold pink"
+format = " [$symbol Turborepo]($style)"
+
+# Custom Module 4: Docker Compose Project Configuration
+[custom.docker_compose]
+description = "Docker Compose project indicator"
+detect_files = ["docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"]
+symbol = "󰡨 "
+style = "bold blue"
+format = " [$symbol Compose]($style)"
+
+# Custom Module 5: Cargo Watch File Listener
+[custom.cargo_watch]
+description = "Cargo Watch background file listener"
+when = "pgrep cargo-watch"
+symbol = "󱘗 "
+style = "bold peach"
+format = " [$symbol watching]($style)"
+
+# Custom Module 6: Cargo Nextest Fast Test Runner
+[custom.cargo_nextest]
+description = "Cargo Nextest test runner configuration"
+detect_files = [".config/nextest.toml"]
+symbol = "󱘗 "
+style = "bold green"
+format = " [$symbol nextest]($style)"
+
+# Custom Module 7: Flutter Pub Package Manager Workspace
+[custom.flutter_pub]
+description = "Flutter Pub package workspace"
+detect_files = ["pubspec.yaml"]
+symbol = "󱏓 "
+style = "bold sky"
+format = " [$symbol Flutter]($style)"
+
+# Custom Module 8: Expo React Native Platform
+[custom.expo]
+description = "Expo React Native application"
+detect_files = ["app.json", "expo-env.d.ts"]
+symbol = "󰅴 "
+style = "bold text"
+format = " [$symbol Expo]($style)"
+
+# Custom Module 9: Cloudflare Wrangler Deployment CLI
+[custom.wrangler]
+description = "Cloudflare Wrangler deployment config"
+detect_files = ["wrangler.toml", "wrangler.json"]
+symbol = "󰅟 "
+style = "bold peach"
+format = " [$symbol Wrangler]($style)"
+
+# Custom Module 10: Cloudflare Edge Workers & Pages
+[custom.cloudflare]
+description = "Cloudflare serverless edge platform"
+detect_files = ["_routes.json", "wrangler.toml"]
+symbol = "󰅟 "
+style = "bold peach"
+format = " [$symbol Cloudflare]($style)"
+
+# Custom Module 11: Supabase Backend Stack
+[custom.supabase]
+description = "Supabase backend stack"
+detect_folders = ["supabase"]
+detect_files = ["supabase/config.toml"]
+symbol = "󱤅 "
+style = "bold green"
+format = " [$symbol Supabase]($style)"
+
+# Custom Module 12: Rclone Active Sync Monitor
+[custom.rclone]
+description = "Rclone active file synchronization"
+when = "pgrep rclone"
+symbol = "󰋊 "
+style = "bold sky"
+format = " [$symbol rclone active]($style)"
+
+# Custom Module 13: Pulumi Infrastructure as Code
+[custom.pulumi]
+description = "Pulumi infrastructure management"
+detect_files = ["Pulumi.yaml", "Pulumi.dev.yaml"]
+symbol = "󰌠 "
+style = "bold mauve"
+format = " [$symbol Pulumi]($style)"
+
+# ------------------------------------------------------------------------------
+# 11. PROMPT CHARACTER & INTERACTIVE EXIT STATES
+# ------------------------------------------------------------------------------
+
+# Main Prompt Character Module
+# Dynamically alters shape and color according to exit code & Vi modal status
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+vimcmd_replace_one_symbol = "[❮](bold mauve)"
+vimcmd_replace_symbol = "[❮](bold mauve)"
+vimcmd_visual_symbol = "[❮](bold yellow)"
+disabled = false

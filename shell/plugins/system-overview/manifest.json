@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "deomarchy.system-overview",
+  "name": "System Overview",
+  "version": "1.0.0",
+  "author": "De-Omarchy",
+  "description": "Full system stats panel: CPU, RAM, disk, GPU temp, network, uptime, kernel",
+  "kinds": [
+    "panel"
+  ],
+  "entryPoints": {
+    "panel": "SystemOverview.qml"
+  }
+}
