@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "omarchy.sysmon",
+  "name": "System monitor",
+  "version": "1.0.0",
+  "author": "de-omarchy",
+  "description": "CPU, RAM, disk and GPU temperature usage in the bar",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "System monitor",
+    "description": "CPU, RAM, disk, GPU temp readouts",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

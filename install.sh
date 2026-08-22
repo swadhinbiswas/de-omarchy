@@ -191,7 +191,7 @@ if [[ ! -f /etc/pam.d/omarchy-lock-password ]]; then
 fi
 
 # ----------------------------------------------------------------------------
-# 7. Clean up stale host config (additive: only comments out dead code)
+# 7. Clean up stale host config (additive: comments out dead code)
 # ----------------------------------------------------------------------------
 log "Cleaning up stale host config"
 
@@ -200,25 +200,8 @@ for stale in moonrice.zsh dots-hyprland.zsh auto-Hypr.sh; do
   [[ -f "$HOME/.config/zshrc.d/$stale" ]] && rm "$HOME/.config/zshrc.d/$stale" && log "removed stale zsh: $stale"
 done
 
-# Comment out dead code paths in execs.lua (wallpaper daemon, moonshell fallback, hypridle)
-EXECS_LUA="$HOME/.config/hypr/hyprland/execs.lua"
-if [[ -f $EXECS_LUA ]]; then
-  # Wallpaper daemon: Omarchy shell renders wallpapers natively
-  if grep -q 'scripts/wallpaper.sh' "$EXECS_LUA" && ! grep -q 'Wallpaper: Omarchy shell' "$EXECS_LUA"; then
-    sed -i 's|hl.exec_cmd(vars.hyprDir .. "/scripts/wallpaper.sh")|-- Wallpaper: Omarchy shell renders natively (disabled by de-omarchy)\n    -- hl.exec_cmd(vars.hyprDir .. "/scripts/wallpaper.sh")|' "$EXECS_LUA"
-    log "commented out wallpaper.sh in execs.lua"
-  fi
-  # Moonshell/waybar/swaync fallback: Omarchy shell is started by de-omarchy bridge
-  if grep -q 'moonshell\|waybar.*swaync' "$EXECS_LUA" && ! grep -q 'Omarchy Quickshell shell' "$EXECS_LUA"; then
-    sed -i '/moonshell when installed/,/fi/c\    -- Desktop shell: Omarchy Quickshell shell launched by de-omarchy bridge.\n    -- hl.exec_cmd("if [ -x " .. vars.shellBin .. " ]; then " .. vars.shellCmd .. "; else waybar \& swaync \& fi")' "$EXECS_LUA"
-    log "commented out moonshell/waybar fallback in execs.lua"
-  fi
-  # hypridle: Omarchy idle service handles lock/screen-off/suspend
-  if grep -q 'hypridle' "$EXECS_LUA" && ! grep -q 'Omarchy idle service' "$EXECS_LUA"; then
-    sed -i 's|hl.exec_cmd("pgrep -x hypridle.*")|-- Idle: Omarchy idle service handles lock/screen-off/suspend.\n    -- hl.exec_cmd("pgrep -x hypridle >/dev/null 2>\&1 || hypridle \&")|' "$EXECS_LUA"
-    log "commented out hypridle in execs.lua"
-  fi
-fi
+# Repoint dead moonshell:* keymap targets at Omarchy equivalents
+bash "$REPO_DIR/scripts/migrate-host-binds.sh"
 
 # ----------------------------------------------------------------------------
 # 8. Omarchy state init + default theme

@@ -95,5 +95,22 @@ Use SUPER+SHIFT+M (Omarchy menu) instead.
 |---|---|---|
 | SUPER+SPACE (menu) | float toggle | SUPER+SHIFT+M |
 
+## Moonrice launcher keys taken over (dead → live)
+
+These dispatched to the removed moonshell via IPC; install.sh
+(scripts/migrate-host-binds.sh) repoints them automatically:
+
+| Keys | Was (dead) | Now |
+|---|---|---|
+| SUPER tap / SUPER+M / SUPER+D | moonshell:launcher | App drawer (`omarchy-menu toggle apps`) |
+| SUPER+SHIFT+S | moonshell:session | Session menu (`omarchy-menu toggle system`) |
+| SUPER+U | moonshell:utilities | Quick toggles (`omarchy-menu toggle toggle`) |
+| SUPER+W | wallpaper.sh (awww daemon) | Background switcher menu |
+| SUPER+SHIFT+W | wallpaper.sh random | Next background (`omarchy-theme-bg-next`) |
+| SUPER+T | theme-switcher.sh (dead `moonrice` binary) | Theme menu (`omarchy-menu toggle theme`) |
+
+Commented out with notes (no equivalent yet): SUPER+SHIFT+D dashboard,
+SUPER+SHIFT+B sidebar, SUPER+I nexus settings, SUPER+SHIFT+K show-all-panels.
+
 Zero silently-dropped actions: everything else upstream binds either matches a
 free key here or is reachable through the Omarchy menu.
