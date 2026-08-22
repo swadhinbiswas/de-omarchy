@@ -1,0 +1,85 @@
+#!/bin/bash
+# Keybinding cheat sheet — regenerated from keymap.lua
+set -euo pipefail
+
+binds="
+#! Shell panels
+6  SUPER + SUPER_L                  App drawer
+6  SUPER + M                        App drawer
+6  SUPER + D                        App drawer
+6  SUPER + SHIFT + S                Session menu
+6  SUPER + SHIFT + D                Dashboard
+6  SUPER + SHIFT + B                Sidebar (network / bluetooth)
+6  SUPER + U                        Utilities (quick toggles)
+6  SUPER + I                        Nexus settings
+6  SUPER + SHIFT + K                Show all panels
+#! Apps & TUI tools
+6  SUPER + RETURN                   Terminal (Kitty)
+6  SUPER + ALT + RETURN             Scratchpad terminal
+6  SUPER + E                        File manager (Yazi)
+6  SUPER + B                        Web browser
+6  SUPER + X                        Editor (Neovim)
+6  SUPER + C                        Code editor
+6  SUPER + ALT + G                  Git (Lazygit)
+6  SUPER + ALT + X                  Markdown (Glow)
+6  SUPER + ALT + M                  Music (Cmus)
+#! Menus & utilities
+6  SUPER + A                        Actions menu
+6  SUPER + SHIFT + A                Toggle microphone
+6  SUPER + V                        Clipboard history
+6  SUPER + W                        Background switcher
+6  SUPER + SHIFT + W                Next background
+6  SUPER + ALT + C                  Calculator
+6  SUPER + ALT + W                  Window switcher
+6  SUPER + H                        Keybinding cheat sheet
+6  SUPER + T                        Theme menu
+6  SUPER + CTRL + R                 Reload Hyprland
+6  SUPER + SHIFT + C                Color picker
+#! Window management
+6  SUPER + Q                        Close window
+6  SUPER + SPACE                    Toggle floating
+6  SUPER + SHIFT + SPACE            Center window
+6  SUPER + F                        Fullscreen
+6  SUPER + SHIFT + F                Fullscreen (maximized)
+6  SUPER + SHIFT + ALT + Q          Kill session
+6  SUPER +                          Focus 
+6  SUPER + SHIFT +                  Move window 
+6  SUPER + ALT + Left               Move window to left monitor
+6  SUPER + ALT + Right              Move window to right monitor
+6  SUPER + mouse:272                Drag window
+6  SUPER + mouse:273                Resize window
+#! Workspaces
+6  SUPER +                          Switch to workspace 
+6  SUPER + SHIFT +                  Move window to workspace 
+#! Lock & power
+6  SUPER + L                        Lock screen
+6  SUPER + ESCAPE                   Lock screen (emergency)
+6  SUPER + SHIFT + L                Suspend
+6  SUPER + ALT + DELETE             Power menu
+6  CTRL + ALT + DELETE              Power menu (emergency)
+#! Screenshots
+6  F6                               Full screenshot
+6  SUPER + CTRL + S                 Region screenshot
+#! Media
+6  XF86AudioPlay                    Play / pause
+6  XF86AudioPause                   Play / pause
+6  XF86AudioNext                    Next track
+6  XF86AudioPrev                    Previous track
+6  SUPER + SHIFT + P                Play / pause
+6  SUPER + SHIFT + N                Next track
+6  SUPER + SHIFT + COMMA            Previous track
+#! Hardware keys
+6  XF86AudioRaiseVolume             Volume up
+6  XF86AudioLowerVolume             Volume down
+6  XF86AudioMute                    Mute
+6  XF86AudioMicMute                 Mute microphone
+6  XF86MonBrightnessUp              Brightness up
+6  XF86MonBrightnessDown            Brightness down
+6  XF86KbdBrightnessUp              Keyboard backlight up
+6  XF86KbdBrightnessDown            Keyboard backlight down
+#! Shell management
+6  CTRL + SUPER + SHIFT + R         Kill shell
+6  CTRL + SUPER + ALT + R           Restart shell
+"
+
+printf "%s" "$binds" | grep -v "^$\|^#!" | rofi -dmenu -p "6 Keybindings" -lines 20
