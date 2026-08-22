@@ -1,0 +1,70 @@
+# de-omarchy UI-layer packages — curated from Omarchy's base list, keeping ONLY
+# what the desktop UI needs. No kernels, drivers, bootloaders, printers, docker
+# or distro-specific packages: your CachyOS/Arch system layer stays untouched.
+# The installer installs only the ones that are missing (pacman, then AUR helper).
+#
+# Format: one package per line; lines starting with # are comments.
+
+# Compositor & portals (usually already installed on Hyprland systems)
+hyprland
+hyprland-guiutils
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+qt6-wayland
+gtk4-layer-shell
+
+# Desktop shell runtime
+quickshell-git
+
+# Lock / idle / color temperature
+hyprlock
+hypridle
+hyprsunset
+hyprpicker
+
+# Capture / clipboard
+grim
+slurp
+wl-clipboard
+cliphist
+gpu-screen-recorder
+imagemagick
+tesseract
+tesseract-data-eng
+
+# Audio / media keys / brightness
+pamixer
+playerctl
+brightnessctl
+ddcutil
+
+# System integration
+networkmanager
+bluez-utils
+udiskie
+power-profiles-daemon
+gvfs-mtp
+gvfs-nfs
+gvfs-smb
+polkit-gnome
+
+# Theming foundations
+gnome-themes-extra
+yaru-icon-theme
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+woff2-font-awesome
+ttf-jetbrains-mono-nerd-basic
+
+# CLI helpers used by omarchy-* commands
+jq
+socat
+gum
+fzf
+fd
+bat
+eza
+fastfetch
+libnotify
+python-gobject

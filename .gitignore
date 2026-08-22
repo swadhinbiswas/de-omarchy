@@ -1,0 +1,10 @@
+# Local secrets / machine-specific files must never be committed
+*.env
+!.env.example
+secrets.env
+backups/
+*.tar.gz
+*.log
+
+# OS noise
+.DS_Store
