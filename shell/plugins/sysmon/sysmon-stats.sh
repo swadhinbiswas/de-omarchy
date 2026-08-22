@@ -4,7 +4,7 @@ prev_idle=$(awk '/^cpu /{print $5}' /proc/stat)
 prev_rx=$(awk 'NR>2{t+=$2} END{print t+0}' /proc/net/dev)
 prev_tx=$(awk 'NR>2{t+=$10} END{print t+0}' /proc/net/dev)
 while true; do
-  sleep 1
+  sleep 2
   cur_cpu=$(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8}' /proc/stat)
   cur_idle=$(awk '/^cpu /{print $5}' /proc/stat)
   dt=$(( cur_cpu - prev_cpu )); di=$(( cur_idle - prev_idle ))
@@ -18,8 +18,16 @@ while true; do
   fi
   gpu=${gpu:-0}
   cputemp=0
-  if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
-    cputemp=$(awk '{printf "%d", $1/1000}' /sys/class/thermal/thermal_zone0/temp)
+  for z in /sys/class/thermal/thermal_zone*/temp; do
+    ztype=$(echo $z | sed 's|/temp||;s|.*/||')
+    ztype=$(cat /sys/class/thermal/$ztype/type 2>/dev/null)
+    if [ "$ztype" = "x86_pkg_temp" ] || [ "$ztype" = "coretemp" ]; then
+      cputemp=$(awk '{printf "%d", $1/1000}' $z)
+      break
+    fi
+  done
+  if [ "$cputemp" = "0" ]; then
+    cputemp=$(awk '{printf "%d", $1/1000}' /sys/class/thermal/thermal_zone3/temp 2>/dev/null)
   fi
   cur_rx=$(awk 'NR>2{t+=$2} END{print t+0}' /proc/net/dev)
   cur_tx=$(awk 'NR>2{t+=$10} END{print t+0}' /proc/net/dev)
