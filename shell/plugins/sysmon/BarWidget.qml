@@ -38,18 +38,32 @@ BarWidget {
     }
   }
 
-  implicitWidth: label.implicitWidth + Style.spacing.controlPaddingX * 2
+  implicitWidth: row.implicitWidth + Style.spacing.controlPaddingX * 2
   implicitHeight: barSize
   visible: !root.vertical
 
-  Text {
-    id: label
+  Row {
+    id: row
     anchors.verticalCenter: parent.verticalCenter
-    anchors.horizontalCenter: parent.horizontalCenter
-    text: "" + root.cpuPct + "% " + root.cpuTemp + "\u00b0  󰗻" + root.memPct + "%  󰋓" + root.diskPct + "%  󱋗" + root.gpuTemp + "\u00b0  󰇣" + root.netDown + "\u2193 " + root.netUp + "\u2191"
-    color: root.bar ? root.bar.barForeground : Color.foreground
-    font.family: root.bar ? root.bar.fontFamily : Style.font.family
-    font.pixelSize: Style.font.body
-    opacity: 0.85
+    spacing: 10
+
+    Repeater {
+      model: [
+        { icon: "", value: root.cpuPct + "%" },
+        { icon: "󱋗", value: root.cpuTemp + "\u00b0" },
+        { icon: "󰗻", value: root.memPct + "%" },
+        { icon: "󰋓", value: root.diskPct + "%" },
+        { icon: "󱈘", value: root.gpuTemp + "\u00b0" },
+        { icon: "󰇣", value: root.netDown + "\u2193" },
+        { icon: "", value: root.netUp + "\u2191" }
+      ]
+      delegate: Text {
+        text: modelData.icon + " " + modelData.value
+        color: root.bar ? root.bar.barForeground : Color.foreground
+        font.family: root.bar ? root.bar.fontFamily : Style.font.family
+        font.pixelSize: Style.font.body
+        opacity: 0.85
+      }
+    }
   }
 }
