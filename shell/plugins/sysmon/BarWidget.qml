@@ -22,7 +22,7 @@ BarWidget {
     running: true
     command: ["bash", scriptPath]
     stdout: SplitParser {
-      onUpdate: function() {
+      onRead: function(line) {
         var m = proc.stdout.match(/C=(\d+) M=(\d+) D=(\d+) G=(\d+) RX=([\d.]+) TX=([\d.]+)/)
         if (m) {
           root.cpuPct = parseInt(m[1])
