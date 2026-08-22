@@ -95,7 +95,7 @@ log "Backup ready: $LATEST_BACKUP"
 install_pkg() {
   local pkg=$1
   if pacman -Qi "$pkg" >/dev/null 2>&1; then return 0; fi
-  if sudo pacman -S --needed --confirm-type nothing "$pkg" >/dev/null 2>&1; then
+  if sudo pacman -S --needed --noconfirm "$pkg" >/dev/null 2>&1; then
     return 0
   fi
   if [[ -n $AUR_HELPER ]]; then
