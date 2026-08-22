@@ -2,10 +2,10 @@
 
 # omarchy:summary=Print the installed Omarchy version
 
-omarchy_path=${OMARCHY_PATH:-/usr/share/omarchy}
+omarchy_path=${OMARCHY_PATH:-/usr/share/de-omarchy}
 omarchy_path=${omarchy_path%/}
 
-if [[ $omarchy_path != "/usr/share/omarchy" ]]; then
+if [[ $omarchy_path != "/usr/share/de-omarchy" ]]; then
   hash=$(git -C "$omarchy_path" rev-parse --short HEAD 2>/dev/null || true)
 
   if [[ -n $hash ]]; then

@@ -175,7 +175,7 @@ target_home=$(getent passwd "$target_user" | cut -d: -f6)
 [[ -n $target_home && -d $target_home ]] || fail "Home directory for '$target_user' was not found."
 target_uid=$(id -u "$target_user")
 target_runtime_dir="/run/user/$target_uid"
-package_path="/usr/share/omarchy/bin:/usr/local/bin:/usr/bin:/bin:$target_home/.local/bin"
+package_path="/usr/share/de-omarchy/bin:/usr/local/bin:/usr/bin:/bin:$target_home/.local/bin"
 
 as_root() {
   if (( EUID == 0 )); then
@@ -217,7 +217,7 @@ run_as_user_omarchy() {
     HOME="$target_home" \
     USER="$target_user" \
     LOGNAME="$target_user" \
-    OMARCHY_PATH=/usr/share/omarchy \
+    OMARCHY_PATH=/usr/share/de-omarchy \
     PATH="$package_path" \
     "$@"
 }
@@ -630,7 +630,7 @@ EOF
 }
 
 configure_snapper_policy() {
-  local snapper_config_script=/usr/share/omarchy/install/config/snapper.sh
+  local snapper_config_script=/usr/share/de-omarchy/install/config/snapper.sh
 
   if ! as_root test -f "$snapper_config_script"; then
     warn "$snapper_config_script is unavailable; Snapper snapshot retention was not normalized."
@@ -638,26 +638,26 @@ configure_snapper_policy() {
   fi
 
   log "Configuring Omarchy snapshot retention"
-  as_root env OMARCHY_PATH=/usr/share/omarchy bash -euo pipefail "$snapper_config_script"
+  as_root env OMARCHY_PATH=/usr/share/de-omarchy bash -euo pipefail "$snapper_config_script"
 }
 
 configure_lock_authentication() {
   # The upgrade runs against whatever the channel currently ships, which can
   # still predate the rename of omarchy-setup-lock to omarchy-apply-lock.
   local apply_lock="" candidate
-  for candidate in /usr/share/omarchy/bin/omarchy-{apply,setup}-lock; do
+  for candidate in /usr/share/de-omarchy/bin/omarchy-{apply,setup}-lock; do
     if [[ -x $candidate ]]; then
       apply_lock=$candidate
       break
     fi
   done
 
-  [[ -n $apply_lock ]] || fail "Neither omarchy-apply-lock nor omarchy-setup-lock is available under /usr/share/omarchy/bin; lock screen authentication could not be configured."
+  [[ -n $apply_lock ]] || fail "Neither omarchy-apply-lock nor omarchy-setup-lock is available under /usr/share/de-omarchy/bin; lock screen authentication could not be configured."
 
   log "Configuring lock screen authentication"
   as_root env \
     OMARCHY_INSTALL_USER="$target_user" \
-    OMARCHY_PATH=/usr/share/omarchy \
+    OMARCHY_PATH=/usr/share/de-omarchy \
     PATH="$package_path" \
     "$apply_lock"
 }
@@ -737,15 +737,15 @@ install_omarchy_quattro_packages() {
   as_root env OMARCHY_UPDATE_PACMAN=1 pacman -Syu --needed --noconfirm --ask 4 --overwrite='*' "${core_packages[@]}"
   mark_packages_explicit "${core_packages[@]}"
 
-  if [[ -f /usr/share/omarchy/install/omarchy-base.packages ]]; then
+  if [[ -f /usr/share/de-omarchy/install/omarchy-base.packages ]]; then
     log "Installing Omarchy quattro default package set"
-    mapfile -t base_packages < <(sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' /usr/share/omarchy/install/omarchy-base.packages)
+    mapfile -t base_packages < <(sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' /usr/share/de-omarchy/install/omarchy-base.packages)
     if (( ${#base_packages[@]} )); then
       as_root pacman -S --needed --noconfirm --ask 4 --overwrite='*' "${base_packages[@]}"
       mark_packages_explicit "${base_packages[@]}"
     fi
   else
-    warn "/usr/share/omarchy/install/omarchy-base.packages was not found; skipping default package set install."
+    warn "/usr/share/de-omarchy/install/omarchy-base.packages was not found; skipping default package set install."
   fi
 
   # Archinstall installs the audio application during fresh ISO installs, so
@@ -981,13 +981,13 @@ create_live_omarchy_overlay() {
   mkdir -p "$compat_root/default"
 
   shopt -s dotglob nullglob
-  for entry in /usr/share/omarchy/*; do
+  for entry in /usr/share/de-omarchy/*; do
     [[ -e $entry ]] || continue
     base=$(basename "$entry")
     [[ $base == default ]] && continue
     ln -s "$entry" "$compat_root/$base"
   done
-  for entry in /usr/share/omarchy/default/*; do
+  for entry in /usr/share/de-omarchy/default/*; do
     [[ -e $entry ]] || continue
     base=$(basename "$entry")
     [[ $base == hypr ]] && continue
@@ -1004,7 +1004,7 @@ legacy_root="\$HOME/.local/share/omarchy"
 compat_root="$compat_root"
 shim_hypr_dir="$shim_hypr_dir"
 if [[ -L \$legacy_root && \$(readlink "\$legacy_root") == "\$compat_root" ]]; then
-  ln -sfn /usr/share/omarchy "\$legacy_root"
+  ln -sfn /usr/share/de-omarchy "\$legacy_root"
 fi
 rm -rf "\$compat_root" "\$shim_hypr_dir"
 rm -f "\$0"
@@ -1020,7 +1020,7 @@ CLEANUP_HOOK
 # the old git checkout for inspection/rollback. If the live Hyprland session is
 # still using legacy ~/.config/hypr/*.conf files, keep those user files in place
 # and provide a temporary default/hypr/*.conf shim so reloads do not explode.
-if [[ -e /usr/share/omarchy ]]; then
+if [[ -e /usr/share/de-omarchy ]]; then
   mkdir -p "$TARGET_HOME/.local/share"
   backup=""
   if [[ -L $legacy_root ]]; then
@@ -1034,11 +1034,11 @@ if [[ -e /usr/share/omarchy ]]; then
     if compat_root=$(create_live_omarchy_overlay "$backup"); then
       ln -sfn "$compat_root" "$legacy_root"
     else
-      echo "Warning: Could not prepare legacy Hyprland conf shim; linking ~/.local/share/omarchy directly to /usr/share/omarchy." >&2
-      ln -sfn /usr/share/omarchy "$legacy_root"
+      echo "Warning: Could not prepare legacy Hyprland conf shim; linking ~/.local/share/omarchy directly to /usr/share/de-omarchy." >&2
+      ln -sfn /usr/share/de-omarchy "$legacy_root"
     fi
   else
-    ln -sfn /usr/share/omarchy "$legacy_root"
+    ln -sfn /usr/share/de-omarchy "$legacy_root"
   fi
 fi
 USER_CLEANUP
@@ -1114,7 +1114,7 @@ run_as_user_wayland_session() {
     WAYLAND_DISPLAY="$wayland_display" \
     HYPRLAND_INSTANCE_SIGNATURE="$hyprland_signature" \
     XDG_SESSION_TYPE=wayland \
-    OMARCHY_PATH=/usr/share/omarchy \
+    OMARCHY_PATH=/usr/share/de-omarchy \
     PATH="$package_path" \
     "$@"
 }
@@ -1263,7 +1263,7 @@ apply_firewall_defaults() {
   # copy this replaces had drifted: it never installed the ufw-docker rules, so
   # upgraded machines came up without the Docker firewall protections a fresh
   # install gets.
-  local firewall_script=/usr/share/omarchy/install/config/firewall.sh
+  local firewall_script=/usr/share/de-omarchy/install/config/firewall.sh
 
   if ! command -v ufw >/dev/null 2>&1; then
     warn "ufw is not installed; skipping firewall defaults."
@@ -1276,7 +1276,7 @@ apply_firewall_defaults() {
   fi
 
   log "Applying Omarchy firewall defaults"
-  as_root env OMARCHY_PATH=/usr/share/omarchy PATH="$package_path" \
+  as_root env OMARCHY_PATH=/usr/share/de-omarchy PATH="$package_path" \
     bash -euo pipefail "$firewall_script" ||
     warn "Could not apply firewall defaults; run 'sudo bash $firewall_script' after reboot."
 }
@@ -1303,7 +1303,7 @@ should_enable_sddm_autologin() {
 
 apply_system_transition() {
   log "Applying Omarchy quattro system transition"
-  [[ -d /usr/share/omarchy ]] || fail "/usr/share/omarchy was not installed."
+  [[ -d /usr/share/de-omarchy ]] || fail "/usr/share/de-omarchy was not installed."
 
   as_root install -d -m 0755 /usr/share/icons/Yaru/scalable/actions
   as_root ln -snf /usr/share/icons/Adwaita/symbolic/actions/go-previous-symbolic.svg \
@@ -1438,7 +1438,7 @@ EOF
 
 apply_user_transition() {
   log "Applying Omarchy quattro user transition"
-  [[ -d /usr/share/omarchy ]] || fail "/usr/share/omarchy was not installed."
+  [[ -d /usr/share/de-omarchy ]] || fail "/usr/share/de-omarchy was not installed."
 
   run_as_user env \
     TARGET_HOME="$target_home" \
@@ -1448,7 +1448,7 @@ apply_user_transition() {
     OMARCHY_USER_EMAIL="${OMARCHY_USER_EMAIL:-}" \
     bash <<'USER_SETUP'
 set -euo pipefail
-root=/usr/share/omarchy
+root=/usr/share/de-omarchy
 state_dir="$HOME/.local/state/omarchy"
 mkdir -p "$state_dir" "$HOME/.config"
 
@@ -1541,7 +1541,7 @@ refresh	xournalpp/settings.xml	1c1a9efbf1b6dc7813bf3440fd5bf8409fc283e8d0192ca29
 # systemd/user/bt-agent.service -> /usr/lib/systemd/user/bt-agent.service
 # systemd/user/omarchy-recover-internal-monitor.service -> /usr/lib/systemd/user/omarchy-recover-internal-monitor.service
 # systemd/user/omarchy-sleep-lock.service -> /usr/lib/systemd/user/omarchy-sleep-lock.service
-# uwsm/default -> /usr/share/omarchy/default/uwsm/default
+# uwsm/default -> /usr/share/de-omarchy/default/uwsm/default
 # uwsm/env -> /usr/share/uwsm/env.d/10-omarchy
 # xdg-terminals.list -> /usr/share/xdg-terminal-exec/hyprland-xdg-terminals.list
 retire	environment.d/fcitx.conf	faacbd703a8f797013968b235fec6289a9c921d3ec7b7f8b4e1cd24392f68b9c
@@ -1778,7 +1778,7 @@ import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
-new_path = "/usr/share/omarchy/default/chromium/extensions/copy-url"
+new_path = "/usr/share/de-omarchy/default/chromium/extensions/copy-url"
 legacy_paths = [
     "~/.local/share/omarchy/default/chromium/extensions/copy-url",
     "$HOME/.local/share/omarchy/default/chromium/extensions/copy-url",
@@ -1849,14 +1849,14 @@ new_block = '''# /etc/omarchy.conf is written by omarchy-dev-link. When absent, 
 # we decide which rc file to source.
 if [[ -f /etc/omarchy.conf ]]; then
   source /etc/omarchy.conf
-  export OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
+  export OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/de-omarchy}"
 else
-  export OMARCHY_PATH=/usr/share/omarchy
+  export OMARCHY_PATH=/usr/share/de-omarchy
 fi
 source "$OMARCHY_PATH/default/bash/rc"
 '''
 text = text.replace('source ~/.local/share/omarchy/default/bash/rc\n', new_block)
-text = text.replace(': "${OMARCHY_PATH:=/usr/share/omarchy}"\nsource "$OMARCHY_PATH/default/bash/rc"\n', new_block)
+text = text.replace(': "${OMARCHY_PATH:=/usr/share/de-omarchy}"\nsource "$OMARCHY_PATH/default/bash/rc"\n', new_block)
 path.write_text(text)
 BASHRC_PATCH_PY
   fi
@@ -1891,7 +1891,7 @@ repair_chromium_copy_url_extension_flags
 
 # Carry over user-added backgrounds from the legacy git checkout backup, then
 # remove old symlinks that pointed ~/.config/omarchy/themes/* back into the
-# pre-quattro checkout. Omarchy quattro reads stock themes from /usr/share/omarchy/themes.
+# pre-quattro checkout. Omarchy quattro reads stock themes from /usr/share/de-omarchy/themes.
 legacy_omarchy_backup="$HOME/.local/share/omarchy.omarchy-upgrade-to-quattro.$BACKUP_SUFFIX.bak"
 if [[ -d $legacy_omarchy_backup/themes && -d $legacy_omarchy_backup/.git ]]; then
   (
@@ -1995,7 +1995,7 @@ if [[ ! -f $HOME/.XCompose ]]; then
 # Run omarchy-restart-xcompose to apply changes
 
 # Include fast emoji access
-include "/usr/share/omarchy/default/xcompose"
+include "/usr/share/de-omarchy/default/xcompose"
 
 # Identification
 <Multi_key> <space> <n> : "$OMARCHY_USER_NAME"

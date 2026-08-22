@@ -30,7 +30,7 @@ case "${1:-}" in
     cat <<USAGE
 Usage: omarchy dev unlink [--no-reboot]
 
-Writes /etc/omarchy.conf so OMARCHY_PATH resolves to /usr/share/omarchy
+Writes /etc/omarchy.conf so OMARCHY_PATH resolves to /usr/share/de-omarchy
 after reboot. This intentionally does not rewrite the running Hyprland,
 systemd, shell, or app-launcher environment; reboot to make every layer agree.
 
@@ -47,7 +47,7 @@ USAGE
     ;;
 esac
 
-default_target="/usr/share/omarchy"
+default_target="/usr/share/de-omarchy"
 
 printf 'export OMARCHY_PATH="%s"\n' "$default_target" | sudo tee /etc/omarchy.conf >/dev/null
 

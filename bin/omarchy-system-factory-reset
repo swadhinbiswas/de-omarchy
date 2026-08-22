@@ -29,7 +29,7 @@
 set -euo pipefail
 
 PROVISIONING_DIR=/var/lib/omarchy/provisioning
-OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
+OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/de-omarchy}"
 TOP_MNT=/run/omarchy-system-factory-reset/top
 NEXT_NAME=@omarchy-reset-next
 LOG_FILE=/var/log/omarchy-system-factory-reset.log
@@ -195,15 +195,15 @@ reset_limine_config() {
     old_ids=$(grep -o 'machine-id=[0-9a-f]\{32\}' "$root$esp/limine.conf" | cut -d= -f2 | sort -u)
   fi
 
-  for template in "$root/usr/share/omarchy/install/assets/limine/limine.conf" \
-                  "$root/usr/share/omarchy/default/limine/limine.conf"; do
+  for template in "$root/usr/share/de-omarchy/install/assets/limine/limine.conf" \
+                  "$root/usr/share/de-omarchy/default/limine/limine.conf"; do
     if [[ -f $template ]]; then
       cp "$template" "$root$esp/limine.conf"
       found=1
       break
     fi
   done
-  [[ -n $found ]] || fail "no limine.conf template in $root/usr/share/omarchy"
+  [[ -n $found ]] || fail "no limine.conf template in $root/usr/share/de-omarchy"
 
   local machine_id old_id
   machine_id=$(cat "$root/etc/machine-id" 2>/dev/null || true)
@@ -274,7 +274,7 @@ rebuild_next_boot() {
       rm -f "$next/etc/mkinitcpio.conf.d/omarchy_resume.conf" \
         "$next/etc/limine-entry-tool.d/resume.conf"
     fi
-    if ! chroot "$next" env OMARCHY_PATH=/usr/share/omarchy \
+    if ! chroot "$next" env OMARCHY_PATH=/usr/share/de-omarchy \
       /usr/bin/omarchy-hibernation-setup --force --no-rebuild >>"$LOG_FILE" 2>&1; then
       fail "hibernation setup failed in the factory root (see $LOG_FILE)"
     fi
@@ -326,7 +326,7 @@ stage_full_reset() {
   [[ -d $next ]] && btrfs subvolume delete --recursive "$next" >/dev/null
   btrfs subvolume snapshot "$top/@factory" "$next" >>"$LOG_FILE"
 
-  local unit_src="$next/usr/share/omarchy/install/provisioning"
+  local unit_src="$next/usr/share/de-omarchy/install/provisioning"
   [[ -f $unit_src/omarchy-provision-owner.service && -x $next/usr/bin/omarchy-provision-owner ]] ||
     fail "the factory snapshot predates provisioning support; cannot reset from it"
 

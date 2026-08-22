@@ -34,6 +34,6 @@ package.path = home
   .. "/.local/state/?.lua;"
   .. home
   .. "/.config/?.lua;"
-  .. (os.getenv("OMARCHY_PATH") or "/usr/share/omarchy")
+  .. (os.getenv("OMARCHY_PATH") or "/usr/share/de-omarchy")
   .. "/?.lua;"
   .. package.path

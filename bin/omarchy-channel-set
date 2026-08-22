@@ -72,7 +72,7 @@ case "$channel" in
     ;;
 esac
 
-if [[ -z $dev_checkout && $OMARCHY_PATH != "/usr/share/omarchy" ]]; then
+if [[ -z $dev_checkout && $OMARCHY_PATH != "/usr/share/de-omarchy" ]]; then
   leaving_dev=1
 fi
 
@@ -89,7 +89,7 @@ sudo env OMARCHY_UPDATE_PACMAN=1 pacman -S --needed --noconfirm --ask 4 "${packa
 
 if [[ -z $dev_checkout ]]; then
   omarchy-dev-unlink --no-reboot
-  export OMARCHY_PATH=/usr/share/omarchy
+  export OMARCHY_PATH=/usr/share/de-omarchy
 
   if (( leaving_dev )); then
     omarchy-state set reboot-required

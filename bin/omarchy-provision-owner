@@ -14,7 +14,7 @@
 set -euo pipefail
 
 PROVISIONING_DIR=/var/lib/omarchy/provisioning
-OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
+OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/de-omarchy}"
 LOG_FILE=/var/log/omarchy-provision-owner.log
 
 if (( EUID != 0 )); then

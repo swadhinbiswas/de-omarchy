@@ -98,28 +98,39 @@ log "Backup ready: $LATEST_BACKUP"
 # ----------------------------------------------------------------------------
 # 3. Packages (UI layer only, missing ones only)
 # ----------------------------------------------------------------------------
-install_pkg() {
-  local pkg=$1
-  if pacman -Qi "$pkg" >/dev/null 2>&1; then return 0; fi
-  if sudo pacman -S --needed --noconfirm "$pkg" >/dev/null 2>&1; then
-    return 0
-  fi
-  if [[ -n $AUR_HELPER ]]; then
-    "$AUR_HELPER" -S --needed "$pkg"
-  else
-    warn "no AUR helper found; install '$pkg' manually (paru/yay)"
-    return 1
-  fi
-}
-
 if (( ! SKIP_PACKAGES )); then
-  log "Installing missing UI packages (this can take a while)"
-  FAILED=""
+  log "Checking UI packages"
+  MISSING=()
   while read -r pkg; do
     [[ -z $pkg || $pkg == \#* ]] && continue
-    install_pkg "$pkg" || FAILED+="$pkg "
+    pacman -Qi "$pkg" >/dev/null 2>&1 || MISSING+=("$pkg")
   done < "$REPO_DIR/packages/ui.packages"
-  [[ -n $FAILED ]] && warn "could not auto-install: $FAILED (the desktop still works if these were optional)"
+
+  if (( ${#MISSING[@]} == 0 )); then
+    log "All UI packages already present"
+  else
+    log "Installing missing UI packages: ${MISSING[*]}"
+    # Repo packages first, in ONE transaction (single sudo prompt).
+    REPO_PKGS=()
+    for pkg in "${MISSING[@]}"; do
+      pacman -Si "$pkg" >/dev/null 2>&1 && REPO_PKGS+=("$pkg")
+    done
+    (( ${#REPO_PKGS[@]} > 0 )) && sudo pacman -S --needed --noconfirm "${REPO_PKGS[@]}"
+
+    # Whatever remains is AUR-only: per package, with piped answers so
+    # prompts (provider selection etc.) never eat our package list.
+    FAILED=""
+    for pkg in "${MISSING[@]}"; do
+      pacman -Qi "$pkg" >/dev/null 2>&1 && continue
+      if [[ -n $AUR_HELPER ]]; then
+        printf '1\n1\n1\ny\n' | "$AUR_HELPER" -S --needed --noconfirm --skipreview "$pkg" \
+          || FAILED+="$pkg "
+      else
+        FAILED+="$pkg "
+      fi
+    done
+    [[ -n ${FAILED:-} ]] && warn "could not auto-install: $FAILED (install manually; desktop works without them)"
+  fi
 fi
 
 command -v quickshell >/dev/null 2>&1 || die "quickshell is required but not installed"
@@ -136,6 +147,7 @@ sudo rsync -a --delete \
 sudo chmod +x "$RUNTIME"/bin/* 2>/dev/null || true
 
 log "Writing /etc/environment.d/10-de-omarchy.conf"
+sudo mkdir -p /etc/environment.d
 printf 'OMARCHY_PATH=%s\n' "$RUNTIME" | sudo tee /etc/environment.d/10-de-omarchy.conf >/dev/null
 
 # ----------------------------------------------------------------------------
