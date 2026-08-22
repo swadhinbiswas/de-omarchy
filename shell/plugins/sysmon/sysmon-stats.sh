@@ -3,7 +3,7 @@
 prev_cpu=$(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8}' /proc/stat)
 prev_idle=$(awk '/^cpu /{print $5}' /proc/stat)
 while true; do
-  sleep 2
+  sleep 1
   cur_cpu=$(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8}' /proc/stat)
   cur_idle=$(awk '/^cpu /{print $5}' /proc/stat)
   dt=$(( cur_cpu - prev_cpu ))

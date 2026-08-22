@@ -23,7 +23,7 @@ BarWidget {
     command: ["bash", scriptPath]
     stdout: SplitParser {
       onRead: function(line) {
-        var m = proc.stdout.match(/C=(\d+) M=(\d+) D=(\d+) G=(\d+) RX=([\d.]+) TX=([\d.]+)/)
+        var m = String(line).match(/C=(\d+) M=(\d+) D=(\d+) G=(\d+) RX=([\d.]+) TX=([\d.]+)/)
         if (m) {
           root.cpuPct = parseInt(m[1])
           root.memPct = parseInt(m[2])
@@ -36,19 +36,18 @@ BarWidget {
     }
   }
 
-  implicitWidth: row.implicitWidth + Style.spacing.controlPaddingX * 2
+  implicitWidth: label.implicitWidth + Style.spacing.controlPaddingX * 2
   implicitHeight: barSize
   visible: !root.vertical
 
-  Row {
-    id: row
+  Text {
+    id: label
     anchors.verticalCenter: parent.verticalCenter
-    spacing: Style.spacing.gap
-
-    Text { text: "󰻠" + root.cpuPct + "%"; color: Color.foreground; font.family: bar.fontFamily; font.pixelSize: Style.font.body; opacity: 0.85 }
-    Text { text: "󰍛" + root.memPct + "%"; color: Color.foreground; font.family: bar.fontFamily; font.pixelSize: Style.font.body; opacity: 0.85 }
-    Text { text: "󰋊" + root.diskPct + "%"; color: Color.foreground; font.family: bar.fontFamily; font.pixelSize: Style.font.body; opacity: 0.85 }
-    Text { text: "󱋗" + root.gpuTemp + "°"; color: Color.foreground; font.family: bar.fontFamily; font.pixelSize: Style.font.body; opacity: 0.85 }
-    Text { text: "󰈯" + root.netDown + "↓ " + root.netUp + "↑"; color: Color.foreground; font.family: bar.fontFamily; font.pixelSize: Style.font.body; opacity: 0.85 }
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: root.cpuPct + "%cpu " + root.memPct + "%ram " + root.gpuTemp + "°gpu " + root.diskPct + "%disk " + root.netDown + "↓ " + root.netUp + "↑"
+    color: root.bar ? root.bar.barForeground : Color.foreground
+    font.family: root.bar ? root.bar.fontFamily : Style.font.family
+    font.pixelSize: Style.font.body
+    opacity: 0.85
   }
 }
