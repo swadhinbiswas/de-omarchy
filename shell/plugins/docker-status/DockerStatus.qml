@@ -11,10 +11,11 @@ BarWidget {
   property int runningCount: 0
   property int unhealthyCount: 0
   property bool dockerAvailable: false
+  property string containerList: ""
 
   visible: dockerAvailable
-  implicitWidth: button.implicitWidth
-  implicitHeight: button.implicitHeight
+  implicitWidth: label.implicitWidth + Style.spacing.controlPaddingX * 2
+  implicitHeight: barSize
 
   function refresh() {
     if (!dockerProc.running) dockerProc.running = true
@@ -24,6 +25,7 @@ BarWidget {
     var lines = String(raw || "").trim().split("\n")
     var running = 0
     var unhealthy = 0
+    var names = []
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim()
       if (line === "") continue
@@ -32,18 +34,14 @@ BarWidget {
       var status = parts[1].toLowerCase()
       if (status.indexOf("up") !== -1) {
         running++
+        names.push(parts[0])
         if (status.indexOf("unhealthy") !== -1) unhealthy++
       }
     }
     runningCount = running
     unhealthyCount = unhealthy
-    dockerAvailable = true
-  }
-
-  function statusText() {
-    if (unhealthyCount > 0)
-      return runningCount + " up, " + unhealthyCount + " unhealthy"
-    return runningCount + " running"
+    containerList = names.join(", ")
+    dockerAvailable = running > 0 || unhealthy > 0
   }
 
   Component.onCompleted: refresh()
@@ -52,10 +50,7 @@ BarWidget {
     id: dockerProc
     command: ["docker", "ps", "--format", "{{.Names}}|{{.Status}}"]
     onExited: function(exitCode) {
-      if (exitCode !== 0) {
-        dockerAvailable = false
-        return
-      }
+      if (exitCode !== 0) root.dockerAvailable = false
     }
     stdout: StdioCollector {
       waitForEnd: true
@@ -75,14 +70,26 @@ BarWidget {
     function refresh(): void { root.refresh() }
   }
 
-  BarIconButton {
-    id: button
+  Text {
+    id: label
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: root.unhealthyCount > 0
+      ? "\uf308 " + root.runningCount + " \u26a0"
+      : "\uf308 " + root.runningCount
+    color: root.unhealthyCount > 0 ? Color.urgent : Color.foreground
+    font.family: root.bar ? root.bar.fontFamily : Style.font.family
+    font.pixelSize: Style.font.body
+    opacity: 0.85
+  }
+
+  MouseArea {
     anchors.fill: parent
-    bar: root.bar
-    text: "\uf308"
-    slotSize: Style.bar.statusSlot
-    fontSize: Style.font.caption
-    tooltipText: "Docker: " + root.statusText()
-    onPressed: root.refresh()
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    onClicked: root.refresh()
+    onEntered: {
+      if (root.bar) root.bar.showTooltip(root, "Docker: " + root.runningCount + " running\n" + root.containerList)
+    }
   }
 }
