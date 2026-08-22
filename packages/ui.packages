@@ -13,8 +13,8 @@ xdg-desktop-portal-gtk
 qt6-wayland
 gtk4-layer-shell
 
-# Desktop shell runtime
-quickshell-git
+# Desktop shell runtime (repo build — tracks Qt, no AUR rebuilds)
+quickshell
 
 # Lock / idle / color temperature
 hyprlock
@@ -46,11 +46,8 @@ power-profiles-daemon
 gvfs-mtp
 gvfs-nfs
 gvfs-smb
-polkit-gnome
 
-# Theming foundations
-gnome-themes-extra
-yaru-icon-theme
+# Theming foundations (pure Arch — no GNOME/Yaru)
 noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji

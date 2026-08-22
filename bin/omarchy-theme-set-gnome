@@ -30,5 +30,5 @@ GNOME_ICONS_THEME=$HOME/.local/state/omarchy/current/theme/icons.theme
 if [[ -f $GNOME_ICONS_THEME ]]; then
   gsettings set org.gnome.desktop.interface icon-theme "$(<$GNOME_ICONS_THEME)"
 else
-  gsettings set org.gnome.desktop.interface icon-theme "Yaru-blue"
+  gsettings set org.gnome.desktop.interface icon-theme "breeze"
 fi
