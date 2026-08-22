@@ -55,8 +55,9 @@ cat <<BANNER
   de-omarchy — apply the Omarchy desktop look on top of $(printf '%s' "${PRETTY_NAME:-this system}")
 
   What happens:
-    1. Full backup of ~/.config, dotfiles, ssh, zsh, package lists
-       -> $BACKUP_ROOT/<timestamp>/   (never inside this repo)
+    1. TARGETED backup (seconds): every file this installer could touch,
+       plus .ssh / zsh stack / starship — -> $BACKUP_ROOT/<timestamp>/
+       (add DEO_BACKUP_FULL=1 to also snapshot all of ~/.config)
     2. Missing UI packages installed (system layer untouched)
     3. Runtime deployed to $RUNTIME
     4. Additive user config hooks installed:
@@ -66,6 +67,11 @@ cat <<BANNER
           your .zshrc already sources this dir — zero edits to .zshrc)
     5. Omarchy state initialized + rose-pine theme applied
 
+  NOTHING in your home directory is ever deleted or overwritten:
+    * new files are only ADDED (symlinks into this repo)
+    * hyprland.lua gets one clearly-marked block APPENDED; a timestamped
+      copy of it is saved next to it first
+    * existing ~/.config/omarchy state is merged with --ignore-existing
   NOT touched: .zshrc/.zshenv/starship.toml/kitty.conf/ssh keys, pacman.conf,
   mirrors, kernel, bootloader, display manager, monitors layout.
 
