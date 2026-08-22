@@ -87,9 +87,12 @@ BarWidget {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onClicked: root.refresh()
+    onClicked: {
+      // Launch lazydocker in a terminal
+      root.bar.run("uwsm-app -- kitty -e lazydocker")
+    }
     onEntered: {
-      if (root.bar) root.bar.showTooltip(root, "Docker: " + root.runningCount + " running\n" + root.containerList)
+      if (root.bar) root.bar.showTooltip(root, "Docker: " + root.runningCount + " running\n" + root.containerList + "\nClick to open lazydocker")
     }
   }
 }
