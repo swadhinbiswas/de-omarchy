@@ -1,0 +1,117 @@
+#!/bin/bash
+
+# omarchy:summary=Interactive multi-monitor management via rofi
+# omarchy:group=monitor
+
+set -euo pipefail
+
+ROT=("0°" "90°" "180°" "270°")
+rofi_menu() { rofi -dmenu -i -p "$1" -width 600 2>/dev/null; }
+backlight_dev() { find /sys/class/backlight -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1; }
+brightness_pct() {
+  local dev b m; dev=$(backlight_dev) || return 1
+  b=$(<"/sys/class/backlight/$dev/brightness"); m=$(<"/sys/class/backlight/$dev/max_brightness")
+  awk "BEGIN{printf\"%.0f\",$b/$m*100}"
+}
+set_brightness() {
+  local dev m; dev=$(backlight_dev) || return 1
+  m=$(<"/sys/class/backlight/$dev/max_brightness")
+  echo "$(( $1 * m / 100 ))" >"/sys/class/backlight/$dev/brightness"
+}
+field() { echo "$1" | jq -r "$2"; }
+list_monitors() {
+  local data="$1" i=0 count; count=$(echo "$data" | jq 'length')
+  while (( i < count )); do
+    local n w h x y t d f
+    n=$(field "$data" ".[$i].name"); w=$(field "$data" ".[$i].width"); h=$(field "$data" ".[$i].height")
+    x=$(field "$data" ".[$i].x"); y=$(field "$data" ".[$i].y"); t=$(field "$data" ".[$i].transform")
+    d=$(field "$data" ".[$i].disabled"); f=$(field "$data" ".[$i].focused")
+    local tag=""; [[ $d == "true" ]] && tag=" [off]"; [[ $f == "true" ]] && tag=" [*]"
+    printf '%s\t%sx%s @ (%s,%s) rot:%s%s\n' "$n" "$w" "$h" "$x" "$y" "${ROT[$t]}" "$tag"
+    (( i++ ))
+  done
+}
+apply_cfg() {
+  local name="$1" data="$2" w h r x y t s d
+  w=$(field "$data" '.width'); h=$(field "$data" '.height'); r=$(field "$data" '.refreshRate')
+  x=$(field "$data" '.x'); y=$(field "$data" '.y'); t=$(field "$data" '.transform')
+  s=$(field "$data" '.scale'); d=$(field "$data" '.disabled')
+  if [[ $d == "true" ]]; then
+    hyprctl keyword monitor "$name,disable" >/dev/null 2>&1
+  else
+    hyprctl keyword monitor "$name,${w}x${h}@${r},${s},${x}x${y},${ROT[$t]}" >/dev/null 2>&1
+  fi
+}
+find_adjacent() {
+  local cur="$1" dir="$2" data="$3" cx cy cw ch best="" bestd=999999 i=0
+  cx=$(jq -r --arg n "$cur" '.[]|select(.name==$n)|.x' <<< "$data")
+  cy=$(jq -r --arg n "$cur" '.[]|select(.name==$n)|.y' <<< "$data")
+  cw=$(jq -r --arg n "$cur" '.[]|select(.name==$n)|.width' <<< "$data")
+  ch=$(jq -r --arg n "$cur" '.[]|select(.name==$n)|.height' <<< "$data")
+  while (( i < $(jq 'length' <<< "$data") )); do
+    local nn nx ny nw nh d=-1
+    nn=$(jq -r ".[$i].name" <<< "$data"); (( i++ ))
+    [[ $nn == "$cur" ]] && continue
+    nx=$(jq -r ".[$i].x" <<< "$data"); ny=$(jq -r ".[$i].y" <<< "$data")
+    nw=$(jq -r ".[$i].width" <<< "$data"); nh=$(jq -r ".[$i].height" <<< "$data")
+    case "$dir" in
+      left)  d=$(( cx - nx - nw )) ;; right) d=$(( nx - cx - cw )) ;;
+      up)    d=$(( cy - ny - nh )) ;; down)  d=$(( ny - cy - ch )) ;;
+    esac
+    (( d >= 0 && d < bestd )) && { bestd=$d; best=$nn; }
+  done
+  [[ -n $best ]] && echo "$best"
+}
+do_actions() {
+  local name="$1" data="$2"
+  local mon; mon=$(jq -r --arg n "$name" '.[]|select(.name==$n)' <<< "$data")
+  while true; do
+    local choice
+    choice=$(printf '%s\n' "Rotate 90°" "Move Left" "Move Right" "Move Up" "Move Down" \
+      "Scale 1x" "Scale 1.5x" "Scale 2x" "Scale 2.5x" "Brightness" "Back" | rofi_menu "Monitor: $name") || return 0
+    case "$choice" in
+      "Rotate 90°")
+        mon=$(jq --argjson t "$(( ($(jq -r '.transform' <<< "$mon") + 1) % 4 ))" '.transform=$t' <<< "$mon")
+        apply_cfg "$name" "$mon";;
+      "Move"*)
+        local dir; dir=$(echo "${choice#Move }" | tr A-Z a-z)
+        local tgt; tgt=$(find_adjacent "$name" "$dir" "$data") || {
+          omarchy-notification-send -i dialog-error -t 3000 "Monitor Manager" "No monitor to the $dir"; continue; }
+        local tm tx ty tw th nx ny
+        tm=$(jq -r --arg n "$tgt" '.[]|select(.name==$n)' <<< "$data")
+        tx=$(jq -r '.x' <<< "$tm"); ty=$(jq -r '.y' <<< "$tm")
+        tw=$(jq -r '.width' <<< "$tm"); th=$(jq -r '.height' <<< "$tm")
+        case "$dir" in
+          left)  nx=$tx;        ny=$ty        ;; right) nx=$((tx+tw)); ny=$ty ;;
+          up)    nx=$tx;        ny=$ty        ;; down)  nx=$tx;        ny=$((ty+th)) ;;
+        esac
+        mon=$(jq --argjson x "$nx" --argjson y "$ny" '.x=$x|.y=$y' <<< "$mon")
+        apply_cfg "$name" "$mon";;
+      "Scale"*)
+        local s; s="${choice#Scale }"; s="${s%x}"
+        mon=$(jq --argjson s "$s" '.scale=$s' <<< "$mon"); apply_cfg "$name" "$mon";;
+      "Brightness")
+        local dev; dev=$(backlight_dev) || {
+          omarchy-notification-send -i dialog-error -t 3000 "Monitor Manager" "No backlight device"; continue; }
+        local cur; cur=$(brightness_pct) || continue
+        local p; p=$(printf '25%%\n50%%\n75%%\n100%%\nCurrent: %s%%\n' "$cur" | rofi_menu "Brightness ($dev)") || continue
+        [[ $p == Current:* ]] || set_brightness "${p%%%}";;
+      "Back") return 1;;
+    esac
+    data=$(hyprctl monitors all -j 2>/dev/null) || break
+    mon=$(jq -r --arg n "$name" '.[]|select(.name==$n)' <<< "$data")
+  done
+}
+main() {
+  local data; data=$(hyprctl monitors all -j 2>/dev/null) || {
+    omarchy-notification-send -i dialog-error -t 3000 "Monitor Manager" "Cannot query monitors"; exit 1; }
+  while true; do
+    local list; list=$(list_monitors "$data") || {
+      omarchy-notification-send -i dialog-information -t 3000 "Monitor Manager" "No monitors"; break; }
+    local choice; choice=$(echo "$list" | rofi_menu "Select Monitor") || break
+    local name; name=$(echo "$choice" | cut -f1)
+    do_actions "$name" "$data" || continue
+    data=$(hyprctl monitors all -j 2>/dev/null) || break
+  done
+}
+main "$@"

@@ -1,0 +1,7 @@
+#!/bin/bash
+# omarchy:summary=Multi-monitor management app (arrange, rotate, scale displays)
+# omarchy:args=
+# omarchy:examples=omarchy-monitor-manager
+
+set -euo pipefail
+exec quickshell -n -p "${OMARCHY_PATH:-/usr/share/de-omarchy}/monitor-manager" &

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "deomarchy.monitormgr",
+  "name": "Monitor Manager",
+  "version": "1.0.0",
+  "author": "de-omarchy",
+  "description": "Multi-monitor management: position, rotation, wallpaper, brightness",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Monitor Manager",
+    "description": "Position, rotation, wallpaper per monitor",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
