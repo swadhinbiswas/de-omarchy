@@ -119,12 +119,19 @@ if (( ! SKIP_PACKAGES )); then
 
     # Whatever remains is AUR-only: per package, with piped answers so
     # prompts (provider selection etc.) never eat our package list.
+    # --skipreview is paru-specific; yay rejects unknown flags.
+    AUR_FLAGS=(-S --needed --noconfirm)
+    [[ $AUR_HELPER == paru ]] && AUR_FLAGS+=(--skipreview)
     FAILED=""
     for pkg in "${MISSING[@]}"; do
       pacman -Qi "$pkg" >/dev/null 2>&1 && continue
       if [[ -n $AUR_HELPER ]]; then
-        printf '1\n1\n1\ny\n' | "$AUR_HELPER" -S --needed --noconfirm --skipreview "$pkg" \
-          || FAILED+="$pkg "
+        log "Installing AUR package: $pkg ($AUR_HELPER)"
+        if (( ASSUME_YES )); then
+          "$AUR_HELPER" "${AUR_FLAGS[@]}" "$pkg" </dev/null || FAILED+="$pkg "
+        else
+          printf 'y\n' | "$AUR_HELPER" "${AUR_FLAGS[@]}" "$pkg" || FAILED+="$pkg "
+        fi
       else
         FAILED+="$pkg "
       fi
@@ -288,12 +295,16 @@ done
 bash "$REPO_DIR/scripts/migrate-host-binds.sh"
 
 # ----------------------------------------------------------------------------
-# 8. Omarchy state init + default theme
+# 8. Omarchy state init + default theme (first install only)
 # ----------------------------------------------------------------------------
-log "Initializing Omarchy state + rose-pine theme"
 export OMARCHY_PATH=$RUNTIME
-mkdir -p "$HOME/.local/state/omarchy/current"
-"$RUNTIME/bin/omarchy-theme-set" rose-pine || warn "theme set failed (non-fatal; run 'omarchy theme set <name>' later)"
+if grep -q . "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null; then
+  log "Omarchy state already initialized — keeping theme '$(cat "$HOME/.local/state/omarchy/current/theme.name")'"
+else
+  log "Initializing Omarchy state + rose-pine theme"
+  mkdir -p "$HOME/.local/state/omarchy/current"
+  "$RUNTIME/bin/omarchy-theme-set" rose-pine || warn "theme set failed (non-fatal; run 'omarchy theme set <name>' later)"
+fi
 
 unset OMARCHY_PATH
 
@@ -307,13 +318,16 @@ cat <<DONE
 
   de-omarchy installed.
 
-  Try it now (without logging out):
-      source ~/.config/zshrc.d/50-de-omarchy.zsh
+  If your desktop was ALREADY running before this install, apply the new
+  runtime now (this picks up shell/QML changes too):
+      omarchy-restart-shell
       hyprctl reload
 
   Full experience after next login (env vars settle everywhere).
   Themes:   omarchy theme list   |   omarchy theme set "Tokyo Night"
   Menu:     SUPER + SHIFT + M    (upstream's SUPER+SPACE stays yours)
+  Screensaver: idle for ~2.5 min — animated via ttfx if python-terminaltexteffects
+               installed; static art otherwise (see any warning above).
   Revert:   ./uninstall.sh       (restores the exact pre-install state)
 
 DONE

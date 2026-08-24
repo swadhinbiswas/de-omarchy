@@ -50,6 +50,23 @@ grep -q . "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null \
   && ok "current theme: $(cat "$HOME/.local/state/omarchy/current/theme.name")" \
   || warn_no_theme=1
 
+# screensaver engine: ttfx is AUR-only; without it the screensaver falls back
+# to static art by design — warn (don't fail) with the exact fix.
+if [[ -f $RUNTIME/bin/omarchy-screensaver ]]; then
+  if command -v ttfx >/dev/null 2>&1; then
+    ok "screensaver: animated (ttfx found)"
+  else
+    echo "  [warn] screensaver will be STATIC art — install the AUR package for animated:"
+    echo "         paru -S python-terminaltexteffects"
+  fi
+fi
+
+# first-party bar widgets that must exist in the runtime
+for widget_dir in sysmon notification-center; do
+  [[ -d $RUNTIME/shell/plugins/$widget_dir || -f $RUNTIME/shell/plugins/bar/widgets/$widget_dir.qml ]] \
+    && ok "runtime plugin present: $widget_dir"
+done
+
 # monitors sanity: live monitors match display/monitors.lua outputs
 if command -v hyprctl >/dev/null 2>&1 && [[ -f $(dirname "${BASH_SOURCE[0]}")/../display/monitors.lua ]]; then
   LIVE=$(hyprctl monitors all 2>/dev/null | grep -oP '^Monitor \K[^ ]+' | sort)
