@@ -25,6 +25,8 @@ PATTERNS=(
   'AKIA[0-9A-Z]{16}'
   'ghp_[A-Za-z0-9]{30,}' 'github_pat_'
   'sk-[A-Za-z0-9]{20,}'
+  '"apiKey":\s*"[^"{]'        # any literal API key in JSON — env refs ({env:…}) pass
+  '\bix_[a-f0-9]{32,}\b'      # provider-specific key prefixes (InferX et al)
   '/home/[a-z0-9_]+'          # hardcoded real usernames must not appear
 )
 for p in "${PATTERNS[@]}"; do
@@ -35,8 +37,10 @@ for p in "${PATTERNS[@]}"; do
     esac
     fail "$file:$line matches /$p/"
   done < <(grep -rInE "$p" . --exclude-dir=.git --exclude-dir=node_modules \
+      --exclude-dir=.claude --exclude-dir=.understand-anything \
       --exclude=KEYMAP.md --exclude=MAPPING.md --exclude=AUDIT.md \
-      --exclude="$(basename "${BASH_SOURCE[0]}")" 2>/dev/null | head -5)
+      --exclude="$(basename "${BASH_SOURCE[0]}")" 2>/dev/null \
+      | grep -v '/home/user')   # generic doc placeholder, not a real username
 done
 
 echo "== sensitive paths that must never be vendored =="

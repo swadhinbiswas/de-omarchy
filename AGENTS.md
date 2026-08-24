@@ -6,7 +6,7 @@ Read this file first. It tells you what this project is, how it is shaped, and e
 
 `de-omarchy` is a **pure Arch / CachyOS port of [Omarchy](https://github.com/omarchy/omarchy)** — DHH's opinionated Hyprland desktop config — with every macOS assumption removed and Arch tooling (pacman/AUR, systemd, uwsm) used instead. It is a desktop environment layer, not an application: it configures Hyprland, a Quickshell QML status bar, keybindings, themes, and ~435 small CLI helper commands.
 
-The repo at `/home/swadhin/de-omarchy` is the **source**. It is deployed (rsync'd) to the runtime at `/usr/share/de-omarchy`. The running desktop reads from the runtime, never from the repo. `OMARCHY_PATH` (set in `/etc/environment.d/10-de-omarchy.conf`) always points at the runtime dir.
+The repo (this checkout, e.g. `~/de-omarchy`) is the **source**. It is deployed (rsync'd) to the runtime at `/usr/share/de-omarchy`. The running desktop reads from the runtime, never from the repo. `OMARCHY_PATH` (set in `/etc/environment.d/10-de-omarchy.conf`) always points at the runtime dir.
 
 ## Architecture in one breath
 
@@ -109,7 +109,7 @@ de-omarchy/
 
 ## Build / deploy / test loop
 
-1. Edit in the repo (`/home/swadhin/de-omarchy`).
+1. Edit in the repo (this checkout, e.g. `~/de-omarchy`).
 2. Deploy what you changed to the runtime:
    - Full reinstall: `sudo bash install.sh` (rsyncs repo → `/usr/share/de-omarchy`, sets `OMARCHY_PATH`).
    - Single file: `sudo cp <repo/path> /usr/share/de-omarchy/<relpath>`.
@@ -122,4 +122,4 @@ de-omarchy/
 - **`keymap.lua` vs `hyprland.lua` reload:** only the prefixes in `default/hypr/bootstrap.lua` `reload_prefixes` are re-evaluated on `hyprctl reload`. Add a new prefix there if you need live reload for it.
 - **Standalone QML windows** can't use the main shell's `qs.Commons`/`qs.Ui` imports; inline what they need.
 - **Plugin Library "0 plugins":** ensure `loadRegistry()` runs on `Component.onCompleted` and the registry path resolves (`OMARCHY_PATH` set in the session).
-- The runtime dir is owned by root; edits there need `sudo`. The repo is owned by `swadhin`. Sudo password for this machine is the user's login password.
+- The runtime dir is owned by root; edits there need `sudo`. Never hardcode absolute home paths, hostnames, or credentials anywhere in the repo — `scripts/scan-secrets.sh` runs as a pre-commit hook and blocks commits that contain them.

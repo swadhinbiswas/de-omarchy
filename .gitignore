@@ -5,6 +5,7 @@ secrets.env
 backups/
 *.tar.gz
 *.log
+.claude/
 
 # OS noise
 .DS_Store

@@ -1,6 +1,6 @@
 # PARITY AUDIT — de-omarchy vs upstream Omarchy
 
-Audited 2026-08-23 against `/home/swadhin/omarchy` (upstream checkout).
+Audited 2026-08-23 against a local upstream Omarchy checkout (`~/omarchy`).
 Method: full recursive diffs of every tree (`bin/`, `shell/`, `config/`,
 `default/`, `themes/`, `applications/`), plus top-level structure comparison
 and spot verification of behavioral claims. Every "missing" below was

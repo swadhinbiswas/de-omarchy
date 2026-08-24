@@ -1,0 +1,4 @@
+#!/bin/bash
+# Enforced pre-commit hook: block commits containing secrets or personal paths.
+# Activate once per clone:  git config core.hooksPath scripts/githooks
+exec "$(git rev-parse --show-toplevel)/scripts/scan-secrets.sh"
