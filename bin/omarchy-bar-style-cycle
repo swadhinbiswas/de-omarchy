@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# omarchy:summary=Cycle to the next (or previous) bar style preset
+# omarchy:args=[prev]
+# omarchy:examples=omarchy bar style cycle | omarchy-bar-style-cycle prev
+# omarchy:alias=omarchy barstyle cycle
+
+set -euo pipefail
+
+direction="${1:-next}"
+case $direction in
+  next | "") direction_arg="1" ;;
+  prev | previous | back) direction_arg="-1" ;;
+  *)
+    echo "Usage: omarchy-bar-style-cycle [next|prev]" >&2
+    exit 2
+    ;;
+esac
+
+next=$(omarchy-shell shell cycleBarStyle "$direction_arg") || {
+  echo "Could not reach the Omarchy shell IPC." >&2
+  exit 1
+}
+
+if [[ $next == "cycle-failed" || -z $next ]]; then
+  echo "Bar style cycle failed." >&2
+  exit 1
+fi
+
+label=$(omarchy-shell -q shell listBarStyles 2>/dev/null | jq -r --arg id "$next" '.styles[] | select(.id == $id) | .label' 2>/dev/null || true)
+omarchy-notification-send "Bar style: ${label:-$next}"
+printf '%s\n' "$next"

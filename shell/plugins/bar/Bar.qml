@@ -7,6 +7,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Ui
 import "BarModel.js" as BarModel
+import "BarStyles.js" as BarStyles
 
 Item {
   id: root
@@ -20,6 +21,8 @@ Item {
   // the bar just renders whatever it's handed. The bar font follows the
   // OS-level fontconfig monospace binding — it is not stored in shell.json.
   required property var barConfig
+  readonly property var barStyle: BarStyles.resolve(barStyleConfig)
+  readonly property var barStyleConfig: root.barConfig || {}
   // Injected by the host shell. Used for shell-wide actions such as opening
   // settings and persisting inline widget state.
   property var shell: null
@@ -69,6 +72,38 @@ Item {
   property color barForeground: useTransparentForeground ? transparentForeground : themeForeground
   property bool foregroundAnimationEnabled: true
   property color background: Color.bar.background
+
+  // ---- Bar style system (presets from BarStyles.js) ----
+  function styleColorToken(name) {
+    if (!name || name === "none") return "transparent"
+    switch (name) {
+      case "accent": return Color.accent
+      case "foreground": return root.foreground
+      case "background": return Color.background
+      case "barBackground": return Color.bar.background
+      case "barText": return Color.bar.text
+      case "selection": return Color.selection
+      case "muted": return Color.muted
+      default: return name
+    }
+  }
+  readonly property var style: ({
+    floatM: root.barStyle.float ? root.barStyle.margin : 0,
+    radius: root.barStyle.radius || 0,
+    bgAlpha: root.barStyle.bgAlpha,
+    gradient: root.barStyle.gradient,
+    islands: root.barStyle.islands,
+    islandGap: root.barStyle.islandGap,
+    islandPad: root.barStyle.islandPadding,
+    borderWidth: root.barStyle.borderWidth,
+    borderColor: styleColorToken(root.barStyle.borderColor),
+    underline: root.barStyle.underline
+  })
+  readonly property color surfaceColor: {
+    var base = root.background
+    var a = root.style.bgAlpha === null ? Color.bar.background.a : root.style.bgAlpha
+    return Qt.rgba(base.r, base.g, base.b, a)
+  }
   property color urgent: Color.bar.active
 
   Behavior on barForeground { enabled: root.foregroundAnimationEnabled; ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
@@ -1003,11 +1038,17 @@ Item {
     }
 
     margins {
-      top: root.barHidden && root.position === "top" ? -root.barSize : 0
-      bottom: root.barHidden && root.position === "bottom" ? -root.barSize : 0
-      left: root.barHidden && root.position === "left" ? -root.barSize : 0
-      right: root.barHidden && root.position === "right" ? -root.barSize : 0
+      top: root.barHidden && root.position === "top" ? -root.barSize
+        : (root.position === "top" || root.vertical ? root.style.floatM : 0)
+      bottom: root.barHidden && root.position === "bottom" ? -root.barSize
+        : (root.position === "bottom" || root.vertical ? root.style.floatM : 0)
+      left: root.barHidden && root.position === "left" ? -root.barSize : root.style.floatM
+      right: root.barHidden && root.position === "right" ? -root.barSize : root.style.floatM
     }
+
+    // Floating presets must reserve their inset, or maximized windows slide
+    // under the visual bar edge.
+    exclusiveZone: root.barHidden ? -1 : root.barSize + root.style.floatM
 
     anchors {
       top: root.position === "top" || root.vertical
@@ -1018,10 +1059,44 @@ Item {
 
     implicitWidth: root.vertical ? root.barSize : 0
     implicitHeight: root.vertical ? 0 : root.barSize
-    color: root.transparent ? "transparent" : root.background
+    color: "transparent"
     surfaceFormat.opaque: false
     WlrLayershell.namespace: "omarchy-bar"
     WlrLayershell.layer: WlrLayer.Top
+
+    Rectangle {
+      id: styleSurface
+      anchors.fill: parent
+      // Island presets paint their own per-section slabs below; a full-band
+      // backdrop would double up behind them.
+      readonly property bool paintsBand: !root.transparent && !root.style.islands
+      color: paintsBand ? root.surfaceColor : "transparent"
+      radius: Math.min(root.style.radius, height / 2)
+      border.width: paintsBand ? root.style.borderWidth : 0
+      border.color: root.style.borderColor
+
+      gradient: root.style.gradient && paintsBand ? gradComp : null
+      Component {
+        id: gradComp
+        Gradient {
+          orientation: root.style.gradient.vertical ? Gradient.Vertical : Gradient.Horizontal
+          GradientStop { position: 0.0; color: root.styleColorToken(root.style.gradient.from) }
+          GradientStop { position: 1.0; color: root.styleColorToken(root.style.gradient.to) }
+        }
+      }
+    }
+
+    Rectangle {
+      visible: root.style.underline && !root.transparent && !root.vertical
+      color: Color.accent
+      radius: 1
+      x: root.style.floatM
+      width: parent.width - root.style.floatM * 2
+      height: 2
+      anchors.top: parent.top
+      // Inner edge of the band: bottom of a top bar, top of a bottom bar.
+      anchors.topMargin: root.position === "top" ? parent.height - 2 : 0
+    }
 
     Loader {
       anchors.fill: parent
@@ -1109,16 +1184,20 @@ Item {
 
         CenterModules { anchors.fill: parent }
 
-        LeftModules {
+        StyleIsland {
           anchors.left: parent.left
           anchors.leftMargin: Style.space(8)
           anchors.verticalCenter: parent.verticalCenter
+
+          LeftModules { }
         }
 
-        RightModules {
+        StyleIsland {
           anchors.right: parent.right
           anchors.rightMargin: Style.space(8)
           anchors.verticalCenter: parent.verticalCenter
+
+          RightModules { }
         }
       }
     }
@@ -1131,16 +1210,24 @@ Item {
 
         CenterModules { anchors.fill: parent }
 
-        LeftModules {
+        StyleIsland {
+          horizontalSection: false
+
           anchors.top: parent.top
           anchors.topMargin: Style.space(8)
           anchors.horizontalCenter: parent.horizontalCenter
+
+          LeftModules { }
         }
 
-        RightModules {
+        StyleIsland {
+          horizontalSection: false
+
           anchors.bottom: parent.bottom
           anchors.bottomMargin: Style.space(8)
           anchors.horizontalCenter: parent.horizontalCenter
+
+          RightModules { }
         }
       }
     }
@@ -1273,6 +1360,38 @@ Item {
     var entries = root.layoutEntries("center")
     var idx = root.entryIndex(entries, root.centerAnchor)
     return idx === -1 ? null : entries[idx]
+  }
+
+  // Backdrop behind one module section for island presets. When the preset
+  // has no islands it renders nothing and adds no padding, so classic
+  // layouts stay pixel-identical; with islands it draws the rounded slab and
+  // insets its content by islandPad along the section axis.
+  // (Top-level inline component: QML forbids declaring a component inside
+  // another component, so this lives outside BarPanel.)
+  component StyleIsland: Rectangle {
+    id: islandFrame
+
+    // true for sections sitting side-by-side along a horizontal bar; false
+    // for sections stacked along a vertical bar.
+    property bool horizontalSection: true
+
+    default property alias content: islandContent.sourceComponent
+
+    readonly property bool painted: root.style.islands && !root.transparent
+    color: painted ? root.surfaceColor : "transparent"
+    radius: Math.min(root.style.radius, height / 2)
+    border.width: painted ? root.style.borderWidth : 0
+    border.color: root.style.borderColor
+
+    implicitWidth: islandContent.implicitWidth
+      + (painted && horizontalSection ? root.style.islandPad * 2 : 0)
+    implicitHeight: islandContent.implicitHeight
+      + (painted && !horizontalSection ? root.style.islandPad * 2 : 0)
+
+    Loader {
+      id: islandContent
+      anchors.centerIn: parent
+    }
   }
 
   component LeftModules: ModuleList {

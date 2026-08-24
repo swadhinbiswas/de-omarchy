@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# omarchy:summary=Set the bar style preset by id
+# omarchy:args=<style-id>
+# omarchy:examples=omarchy bar style set glass | omarchy-bar-style-set floating-islands
+# omarchy:alias=omarchy barstyle set
+
+set -euo pipefail
+
+if (( $# < 1 )) || [[ -z ${1:-} ]]; then
+  echo "Usage: omarchy-bar-style-set <style-id>" >&2
+  echo "Available styles:" >&2
+  omarchy-bar-style-list | sed 's/^/  /' >&2
+  exit 2
+fi
+
+style_id="$1"
+
+known=$(omarchy-shell -q shell listBarStyles 2>/dev/null | jq -r --arg id "$style_id" '.styles[] | select(.id == $id) | .id' 2>/dev/null || true)
+
+# Shell unreachable? Validate against the built-in order so the command still
+# works from a TTY before the session is up.
+if [[ -z $known ]]; then
+  case $style_id in
+    classic | floating-islands | glass | capsule | terminal-boxed | minimal-line | gradient-wave | oled-black | soft-rounded | segmented)
+      known=$style_id
+      ;;
+  esac
+fi
+
+if [[ -z $known ]]; then
+  echo "Unknown bar style: $style_id" >&2
+  omarchy-bar-style-list | sed 's/^/  /' >&2
+  exit 1
+fi
+
+result=$(omarchy-shell shell setBarStyle "$style_id") || {
+  echo "Could not reach the Omarchy shell IPC." >&2
+  exit 1
+}
+
+if [[ $result != "ok" ]]; then
+  echo "$result" >&2
+  exit 1
+fi
+
+label=$(omarchy-shell -q shell listBarStyles 2>/dev/null | jq -r --arg id "$style_id" '.styles[] | select(.id == $id) | .label' 2>/dev/null || true)
+omarchy-notification-send "Bar style: ${label:-$style_id}"
+printf '%s\n' "$style_id"

@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# omarchy:summary=Pick a bar style preset from the menu
+# omarchy:examples=omarchy bar style menu
+# omarchy:alias=omarchy barstyle menu
+
+set -euo pipefail
+
+# FontAwesome-range glyphs — present in every Nerd Font build.
+declare -A STYLE_ICONS=(
+  [classic]=$'\uf0c9'
+  [floating-islands]=$'\uf00a'
+  [glass]=$'\uf06e'
+  [capsule]=$'\uf111'
+  [terminal-boxed]=$'\uf120'
+  [minimal-line]=$'\uf068'
+  [gradient-wave]=$'\uf1fe'
+  [oled-black]=$'\uf186'
+  [soft-rounded]=$'\uf118'
+  [segmented]=$'\uf0db'
+)
+
+styles_json=$(omarchy-shell -q shell listBarStyles 2>/dev/null || true)
+if [[ -z $styles_json ]] || ! jq -e '.styles | length > 0' <<<"$styles_json" >/dev/null 2>&1; then
+  echo "Omarchy shell not reachable — cannot list bar styles." >&2
+  exit 1
+fi
+
+# The id rides along as row subtext and comes back with the selection, same
+# trick omarchy-menu-plugin uses to tell rows apart.
+rows=""
+while IFS=$'\t' read -r id label; do
+  icon=${STYLE_ICONS[$id]:-$'\uf29c'}
+  mark=""
+  active=$(jq -r '.active' <<<"$styles_json")
+  [[ $id == "$active" ]] && mark="* "
+  rows+="${icon}"$'\t'"${mark}${label}"$'\t'"${id}"$'\n'
+done < <(jq -r '.styles[] | [.id, .label] | @tsv' <<<"$styles_json")
+
+selection=$(omarchy-menu-select "Bar style" <<<"$rows") || exit 0
+[[ -n $selection ]] || exit 0
+
+style_id=$(cut -f3 <<<"$selection")
+[[ -n $style_id ]] || exit 1
+
+exec omarchy-bar-style-set "$style_id"

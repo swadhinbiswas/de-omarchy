@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# omarchy:summary=List bar style presets and show the active one
+# omarchy:args=[--json]
+# omarchy:examples=omarchy bar style list | omarchy-bar-style-list --json
+# omarchy:alias=omarchy barstyle list
+
+set -euo pipefail
+
+# Canonical order lives in shell/plugins/bar/BarStyles.js; this copy only
+# serves when the shell IPC is unreachable (shell not running yet).
+FALLBACK_ORDER=(
+  classic
+  floating-islands
+  glass
+  capsule
+  terminal-boxed
+  minimal-line
+  gradient-wave
+  oled-black
+  soft-rounded
+  segmented
+)
+
+json_output="false"
+[[ ${1:-} == "--json" ]] && json_output="true"
+
+ipc_json=""
+if ipc_json=$(omarchy-shell -q shell listBarStyles 2>/dev/null) && jq -e '.styles | length > 0' <<<"$ipc_json" >/dev/null 2>&1; then
+  if [[ $json_output == "true" ]]; then
+    jq . <<<"$ipc_json"
+    exit 0
+  fi
+
+  active=$(jq -r '.active' <<<"$ipc_json")
+  while IFS=$'\t' read -r id label description; do
+    marker=" "
+    [[ $id == "$active" ]] && marker="*"
+    printf '%s %-18s %-18s %s\n' "$marker" "$id" "$label" "$description"
+  done < <(jq -r '.styles[] | [.id, .label, .description] | @tsv' <<<"$ipc_json")
+  exit 0
+fi
+
+active=$(jq -r '.bar.styleName // "classic"' "$HOME/.config/omarchy/shell.json" 2>/dev/null || true)
+[[ -n $active ]] || active="classic"
+
+if [[ $json_output == "true" ]]; then
+  styles=$(printf '%s\n' "${FALLBACK_ORDER[@]}" | jq -Rn '[inputs | {id:., label:(.[0:1]|ascii_upcase)+.[1:], description:""}]')
+  jq -n --arg active "$active" --argjson styles "$styles" '{active:$active, styles:$styles}'
+  exit 0
+fi
+
+echo "(shell not running; showing built-in order — active marked *)"
+for id in "${FALLBACK_ORDER[@]}"; do
+  marker=" "
+  [[ $id == "$active" ]] && marker="*"
+  printf '%s %s\n' "$marker" "$id"
+done

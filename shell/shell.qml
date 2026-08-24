@@ -6,6 +6,7 @@ import Quickshell.Io
 import qs.Commons
 
 import "plugins/bar"
+import "plugins/bar/BarStyles.js" as BarStyles
 import "services"
 
 ShellRoot {
@@ -159,6 +160,30 @@ ShellRoot {
     var copy = JSON.parse(JSON.stringify(shellConfig || builtinShellConfig))
     mutator(copy)
     persistShellConfig(copy)
+  }
+
+  // ------------------------------------------------------------- bar styles
+  //
+  // BarStyles.js is the single source of truth for the preset list; these
+  // helpers persist the choice into shell.json (bar.styleName), which Bar.qml
+  // reads back through barConfig.
+
+  function setBarStyle(styleId) {
+    var next = String(styleId || "").trim()
+    if (BarStyles.indexOf(next) === -1) return false
+    shell.mutateShellConfig(function(config) {
+      if (!Util.isPlainObject(config.bar)) config.bar = {}
+      config.bar.styleName = next
+    })
+    return true
+  }
+
+  function cycleBarStyle(direction) {
+    var current = "classic"
+    if (Util.isPlainObject(shell.barConfig) && shell.barConfig.styleName)
+      current = String(shell.barConfig.styleName)
+    var next = BarStyles.step(current, direction >= 0 ? 1 : -1)
+    return shell.setBarStyle(next) ? next : ""
   }
 
   // Exposed as a property so child plugins (notifications, future panels)
@@ -902,6 +927,27 @@ ShellRoot {
         return "ok"
       }
       return "no-bar"
+    }
+
+    function listBarStyles(): string {
+      var out = []
+      var order = BarStyles.ORDER
+      for (var i = 0; i < order.length; i++) {
+        var preset = BarStyles.PRESETS[order[i]]
+        out.push({ id: order[i], label: preset.label, description: preset.description })
+      }
+      var active = Util.isPlainObject(shell.barConfig) && shell.barConfig.styleName
+        ? String(shell.barConfig.styleName) : "classic"
+      return JSON.stringify({ active: active, styles: out })
+    }
+
+    function setBarStyle(styleId: string): string {
+      return shell.setBarStyle(styleId) ? "ok" : "unknown-style: " + styleId
+    }
+
+    function cycleBarStyle(direction: string): string {
+      var next = shell.cycleBarStyle(direction === "-1" || direction === "prev" ? -1 : 1)
+      return next ? next : "cycle-failed"
     }
 
     function setPluginEnabled(id: string, enabled: string): string {
