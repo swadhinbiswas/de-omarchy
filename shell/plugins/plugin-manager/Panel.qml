@@ -56,6 +56,78 @@ Panel {
     ? root.bar.shell.pluginRegistry
     : (root.bar ? root.bar.pluginRegistry : null)
 
+  // ---------------------------------------------------------------- Iconography
+  //
+  // Nerd Font glyph codepoints (same family the bar renders with) instead of
+  // colored emoji. Most glyphs live beyond the BMP, so they are stored as
+  // ints and resolved with String.fromCodePoint.
+  readonly property string nfFontFamily: "JetBrainsMono Nerd Font"
+  function nf(code) { return String.fromCodePoint(code) }
+  readonly property var ic: ({
+    puzzle: 0xF0327,        // md-puzzle
+    package: 0xF03D3,       // md-package
+    globe: 0xF00AC,         // fa-globe
+    magnify: 0xF0349,       // md-magnify
+    close: 0xF0156,         // md-close
+    check: 0xF012C,         // md-check
+    closeCircle: 0xF0159,   // md-close_circle
+    checkCircle: 0xF05E0,   // md-check_circle
+    pin: 0xF0403,           // md-pin
+    plus: 0xF0415,          // md-plus
+    keyboard: 0xF097B,      // md-keyboard_outline
+    trash: 0xF1F8,          // fa-trash
+    star: 0xF04CE           // md-star
+  })
+
+  // Per-plugin glyph, mirroring the Plugin Library window's map.
+  function getPluginIcon(id) {
+    var map = {
+      "omarchy.menu": 0xF0463,                // md-rocket
+      "omarchy.active-window": 0xF05B1,       // md-window_open
+      "omarchy.workspaces": 0xF0570,          // md-view_grid
+      "omarchy.bar": 0xF056E,                 // md-view_dashboard
+      "omarchy.agents": 0xF06A9,              // md-robot
+      "omarchy.audio": 0xF057E,               // md-volume_high
+      "omarchy.bluetooth": 0xF00AF,           // md-bluetooth
+      "omarchy.network": 0xF05A9,             // md-wifi
+      "omarchy.clock": 0xF0150,               // md-clock_outline
+      "omarchy.battery": 0xF0079,             // md-battery
+      "omarchy.power": 0xF0425,               // md-power
+      "omarchy.sysmon": 0xF029A,              // md-gauge
+      "omarchy.weather": 0xF0599,             // md-weather_sunny
+      "omarchy.media": 0xF075A,               // md-music
+      "omarchy.notifications": 0xF009A,       // md-bell
+      "omarchy.clipboard": 0xF014D,           // md-clipboard_text
+      "omarchy.emojis": 0xF01F2,              // md-emoticon_outline
+      "omarchy.indicators": 0xF0335,          // md-lightbulb
+      "omarchy.keyboard-layout": 0xF097B,     // md-keyboard_outline
+      "omarchy.lock": 0xF033E,                // md-lock
+      "omarchy.nightlight": 0xF0594,          // md-weather_night
+      "omarchy.microphone": 0xF036C,          // md-microphone
+      "omarchy.tray": 0xF1294,                // md-tray
+      "omarchy.background": 0xF02E9,          // md-image
+      "omarchy.idle": 0xF051F,                // md-timer_sand
+      "omarchy.polkit": 0xF0BC5,              // md-shield_key_outline
+      "omarchy.reminders": 0xF13AB,           // md-timer
+      "omarchy.spacer": 0xF084E,              // md-arrow_expand_horizontal
+      "omarchy.speedtest": 0xF04C5,           // md-speedometer
+      "omarchy.system-update": 0xF06B0,       // md-update
+      "omarchy.tailscale": 0xF0582,           // md-vpn
+      "omarchy.wifiqr": 0xF0432,              // md-qrcode
+      "deomarchy.docker-status": 0xF0868,     // md-docker
+      "deomarchy.wallpaper-manager": 0xF0E09, // md-wallpaper
+      "deomarchy.power-profile": 0xF0241,     // md-flash
+      "deomarchy.system-overview": 0xF154D,   // md-chart_box
+      "deomarchy.monitor-manager": 0xF0379,   // md-monitor
+      "deomarchy.plugin-manager": 0xF0327,    // md-puzzle
+      "deomarchy.plugin-library": 0xF0327,    // md-puzzle
+      "nosignal.motion-wallpaper": 0xF022F,   // md-film
+      "omaplug": 0xF06A5                      // md-power_plug
+    }
+    if (map[id] !== undefined) return String.fromCodePoint(map[id])
+    return String.fromCodePoint(0xF0068)        // md-auto_fix
+  }
+
   Component.onCompleted: {
     loadInstalled()
     loadMarketplace()
@@ -397,25 +469,26 @@ Panel {
     onExited: function(code) {
       root.installingId = ""
       root.updatingAll = false
-      if (code === 0) {
-        if (targetAction === "install") {
-          root.showToast("✓ Installed " + targetName + "!", "success")
-        } else if (targetAction === "remove") {
-          root.showToast("✓ Removed " + targetName + ".", "success")
-        } else if (targetAction === "toggle") {
-          root.showToast("✓ " + (targetState ? "Enabled" : "Disabled") + " " + targetName, "success")
-        } else if (targetAction === "bar_add") {
-          root.showToast("✓ Added " + targetName + " to top bar!", "success")
-        } else if (targetAction === "bar_remove") {
-          root.showToast("✓ Removed " + targetName + " from bar.", "success")
-        } else if (targetAction === "shortcut_set") {
-          root.showToast("✓ Shortcut saved for " + targetName + "!", "success")
-        } else if (targetAction === "shortcut_remove") {
-          root.showToast("✓ Shortcut cleared for " + targetName, "success")
+        if (code === 0) {
+          var ok = root.nf(root.ic.checkCircle)
+          if (targetAction === "install") {
+            root.showToast(ok + " Installed " + targetName + "!", "success")
+          } else if (targetAction === "remove") {
+            root.showToast(ok + " Removed " + targetName + "!", "success")
+          } else if (targetAction === "toggle") {
+            root.showToast(ok + " " + (targetState ? "Enabled" : "Disabled") + " " + targetName, "success")
+          } else if (targetAction === "bar_add") {
+            root.showToast(ok + " Added " + targetName + " to top bar!", "success")
+          } else if (targetAction === "bar_remove") {
+            root.showToast(ok + " Removed " + targetName + " from bar.", "success")
+          } else if (targetAction === "shortcut_set") {
+            root.showToast(ok + " Shortcut saved for " + targetName + "!", "success")
+          } else if (targetAction === "shortcut_remove") {
+            root.showToast(ok + " Shortcut cleared for " + targetName, "success")
+          }
+        } else {
+          root.showToast(root.nf(root.ic.closeCircle) + " Action failed for " + targetName, "error")
         }
-      } else {
-        root.showToast("✕ Action failed for " + targetName, "error")
-      }
       root.loadInstalled()
       root.loadShortcuts()
       root.loadBarLayout()
@@ -443,9 +516,9 @@ Panel {
       spacing: 10
 
       Text {
-        text: "🧩 Plugin Manager"
+        text: root.nf(root.ic.puzzle) + " Plugin Manager"
         color: Color.foreground
-        font.family: root.bar ? root.bar.fontFamily : Style.font.family
+        font.family: root.nfFontFamily
         font.pixelSize: 18
         font.bold: true
       }
@@ -473,8 +546,9 @@ Panel {
 
             Text {
               anchors.centerIn: parent
-              text: "📦 Installed (" + root.installedPlugins.length + ")"
+              text: root.nf(root.ic.package) + " Installed (" + root.installedPlugins.length + ")"
               color: root.currentTab === "installed" ? Color.background : Color.foreground
+              font.family: root.nfFontFamily
               font.pixelSize: 11
               font.bold: root.currentTab === "installed"
             }
@@ -494,8 +568,9 @@ Panel {
 
             Text {
               anchors.centerIn: parent
-              text: "🌐 Marketplace"
+              text: root.nf(root.ic.globe) + " Marketplace"
               color: root.currentTab === "marketplace" ? Color.background : Color.foreground
+              font.family: root.nfFontFamily
               font.pixelSize: 11
               font.bold: root.currentTab === "marketplace"
             }
@@ -582,7 +657,7 @@ Panel {
               anchors.fill: parent
               anchors.margins: 6
               spacing: 6
-              Text { text: "🔍"; font.pixelSize: 10; color: Color.subtext }
+              Text { text: root.nf(root.ic.magnify); font.family: root.nfFontFamily; font.pixelSize: 11; color: Color.subtext }
               TextInput {
                 id: installedSearchField
                 Layout.fillWidth: true
@@ -608,7 +683,7 @@ Panel {
                 { id: "all", label: "All" },
                 { id: "active", label: "Active" },
                 { id: "inactive", label: "Inactive" },
-                { id: "bar", label: "📌 In Bar" },
+                { id: "bar", label: "In Bar" },
                 { id: "user", label: "User" }
               ]
               delegate: Rectangle {
@@ -673,10 +748,10 @@ Panel {
                   color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.2)
                   Text {
                     anchors.centerIn: parent
-                    text: root.getInitials(modelData.name || modelData.id)
-                    color: Color.foreground
-                    font.pixelSize: 12
-                    font.bold: true
+                    text: root.getPluginIcon(modelData.id)
+                    color: Color.accent
+                    font.family: root.nfFontFamily
+                    font.pixelSize: 18
                   }
                 }
 
@@ -709,8 +784,9 @@ Panel {
                   Text {
                     id: pBarText
                     anchors.centerIn: parent
-                    text: inBar ? "📌 In Bar" : "➕ Bar"
+                    text: inBar ? root.nf(root.ic.pin) + " In Bar" : root.nf(root.ic.plus) + " Bar"
                     color: inBar ? "#a6e3a1" : Color.subtext
+                    font.family: root.nfFontFamily
                     font.pixelSize: 9
                     font.bold: inBar
                   }
@@ -734,8 +810,9 @@ Panel {
                   Text {
                     id: pScText
                     anchors.centerIn: parent
-                    text: shortcut !== "" ? "⌨ " + shortcut : "⌨ Key"
+                    text: root.nf(root.ic.keyboard) + (shortcut !== "" ? " " + shortcut : " Key")
                     color: shortcut !== "" ? "#ff9e64" : Color.subtext
+                    font.family: root.nfFontFamily
                     font.pixelSize: 9
                     font.bold: shortcut !== ""
                   }
@@ -754,7 +831,7 @@ Panel {
                   Layout.preferredHeight: 26
                   radius: 4
                   color: Qt.rgba(1, 0, 0, 0.15)
-                  Text { anchors.centerIn: parent; text: "🗑"; font.pixelSize: 10 }
+                  Text { anchors.centerIn: parent; text: root.nf(root.ic.trash); font.family: root.nfFontFamily; font.pixelSize: 12; color: "#f7768e" }
                   MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
@@ -812,7 +889,7 @@ Panel {
               anchors.fill: parent
               anchors.margins: 6
               spacing: 6
-              Text { text: "🌐"; font.pixelSize: 10; color: Color.subtext }
+              Text { text: root.nf(root.ic.globe); font.family: root.nfFontFamily; font.pixelSize: 11; color: Color.subtext }
               TextInput {
                 id: marketSearchField
                 Layout.fillWidth: true
@@ -918,8 +995,9 @@ Panel {
                     }
                     Text {
                       visible: (modelData.stars || 0) > 0
-                      text: "★ " + modelData.stars
+                      text: root.nf(root.ic.star) + " " + modelData.stars
                       color: "#e0af68"
+                      font.family: root.nfFontFamily
                       font.pixelSize: 10
                     }
                   }
@@ -943,8 +1021,9 @@ Panel {
 
                   Text {
                     anchors.centerIn: parent
-                    text: installed ? "✓ Installed" : (root.installingId === modelData.id ? "..." : "Install")
+                    text: installed ? root.nf(root.ic.check) + " Installed" : (root.installingId === modelData.id ? "..." : "Install")
                     color: installed ? "#a6e3a1" : (root.installingId === modelData.id ? Color.subtext : Color.background)
+                    font.family: root.nfFontFamily
                     font.pixelSize: 10
                     font.bold: true
                   }
@@ -990,8 +1069,9 @@ Panel {
         spacing: 10
 
         Text {
-          text: "⌨ Set Keyboard Shortcut"
+          text: root.nf(root.ic.keyboard) + " Set Keyboard Shortcut"
           color: Color.foreground
+          font.family: root.nfFontFamily
           font.pixelSize: 14
           font.bold: true
         }
@@ -1072,7 +1152,7 @@ Panel {
         spacing: 12
 
         Text {
-          text: "📌 Add to Omarchy Top Bar"
+          text: root.nf(root.ic.pin) + " Add to Omarchy Top Bar"
           color: Color.foreground
           font.pixelSize: 14
           font.bold: true

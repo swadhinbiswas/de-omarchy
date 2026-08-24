@@ -3,7 +3,29 @@
   "version": "1.0.0",
   "plugins": [
     {
-      "id": "deomarchy.sysmon",
+      "id": "deomarchy.plugin-manager",
+      "name": "Plugin Manager",
+      "description": "Manage installed plugins and discover 1,000+ community extensions from OmarchyPlugins.com",
+      "author": "de-omarchy",
+      "category": "System",
+      "tags": ["management", "marketplace", "panel", "bar-widget"],
+      "kind": "panel",
+      "status": "stable",
+      "installCommand": "cp -r shell/plugins/plugin-manager ~/.config/omarchy/plugins/"
+    },
+    {
+      "id": "omaplug",
+      "name": "Omaplug",
+      "description": "Standalone Omarchy plugin manager: enable/disable, update, install, and remove plugins",
+      "author": "Fross",
+      "category": "System",
+      "tags": ["management", "bar-widget"],
+      "kind": "bar-widget",
+      "status": "stable",
+      "installCommand": "git clone https://github.com/fross100/omaplug.git ~/.config/omarchy/plugins/omaplug"
+    },
+    {
+      "id": "omarchy.sysmon",
       "name": "System Monitor",
       "description": "CPU, RAM, disk, GPU temp, network in bar",
       "author": "de-omarchy",

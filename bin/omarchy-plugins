@@ -1,87 +1,492 @@
 #!/bin/bash
-# omarchy-plugins — browse and install plugins from the de-omarchy registry
-# Usage: omarchy-plugins [list|install|search|info] [plugin-name]
-set -euo pipefail
 
-REGISTRY="${OMARCHY_PATH:-/usr/share/de-omarchy}/registry.json"
-PLUGIN_DIR="$HOME/.config/omarchy/plugins"
+# omarchy:summary=Manage installed plugins and browse the Omarchy plugin marketplace
+# omarchy:group=plugin
+# omarchy:args=[list|marketplace|install|remove|enable|disable|update|gui] [args...]
+# omarchy:examples=omarchy plugins list | omarchy plugins marketplace | omarchy plugins install game-of-life | omarchy plugins enable omarchy.dropbox
 
-ACTION="${1:-list}"
-QUERY="${2:-}"
+set -eo pipefail
 
-log() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
-err() { printf '\033[1;31mERR:\033[0m %s\n' "$*" >&2; exit 1; }
+OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/de-omarchy}"
+PLUGINS_DIR="$HOME/.config/omarchy/plugins"
+CACHE_DIR="$HOME/.cache/omarchy"
+MARKETPLACE_CACHE="$CACHE_DIR/marketplace_catalog.json"
+MARKETPLACE_URL="https://omarchyplugins.com/catalog.json"
+REGISTRY_FILE="$OMARCHY_PATH/registry.json"
 
-[[ -f "$REGISTRY" ]] || err "Registry not found at $REGISTRY"
+mkdir -p "$PLUGINS_DIR" "$CACHE_DIR"
 
-list_plugins() {
-  python3 -c "
-import json, sys
-with open('$REGISTRY') as f: r = json.load(f)
-for p in r.get('plugins', []):
-    installed = '$PLUGIN_DIR/' + p['id'].split('.')[-1]
-    import os
-    status = 'installed' if os.path.isdir(installed) else 'available'
-    print(f\"  {p['id']:40s} {p['category']:12s} {p['status']:8s} [{status}]\")
-"
+log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m ->\033[0m %s\n' "$*"; }
+err()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
+
+ensure_marketplace_catalog() {
+  local force="${1:-false}"
+  if [[ $force == "true" || ! -f "$MARKETPLACE_CACHE" || $(find "$MARKETPLACE_CACHE" -mmin +1440 2>/dev/null) ]]; then
+    log "Fetching latest marketplace catalog from $MARKETPLACE_URL..."
+    if curl -sL --connect-timeout 5 --max-time 15 "$MARKETPLACE_URL" -o "$MARKETPLACE_CACHE.tmp" 2>/dev/null; then
+      if jq -e '.plugins | length > 0' "$MARKETPLACE_CACHE.tmp" >/dev/null 2>&1; then
+        mv "$MARKETPLACE_CACHE.tmp" "$MARKETPLACE_CACHE"
+      else
+        rm -f "$MARKETPLACE_CACHE.tmp"
+      fi
+    else
+      rm -f "$MARKETPLACE_CACHE.tmp"
+    fi
+  fi
+
+  if [[ ! -f "$MARKETPLACE_CACHE" ]]; then
+    if [[ -f "$REGISTRY_FILE" ]]; then
+      cp "$REGISTRY_FILE" "$MARKETPLACE_CACHE"
+    else
+      echo '{"plugins":[]}' > "$MARKETPLACE_CACHE"
+    fi
+  fi
 }
 
-search_plugins() {
-  python3 -c "
-import json, sys
-with open('$REGISTRY') as f: r = json.load(f)
-q = '$QUERY'.lower()
-for p in r.get('plugins', []):
-    searchable = (p['name'] + ' ' + p['description'] + ' ' + ' '.join(p.get('tags', []))).lower()
-    if q in searchable:
-        print(f\"  {p['id']:40s} {p['name']}\")
-        print(f\"    {p['description']}\")
-        print()
-"
+cmd_list() {
+  local json="false"
+  while (( $# > 0 )); do
+    case "$1" in
+      --json) json="true" ;;
+      *) ;;
+    esac
+    shift
+  done
+
+  local shell_json
+  shell_json=$(omarchy-shell shell listPlugins 2>/dev/null || true)
+
+  if [[ -z $shell_json || $shell_json == "null" || $shell_json == *"error"* ]]; then
+    # Fallback to scanning catalog directly
+    shell_json=$(omarchy-plugin-catalog 2>/dev/null | jq '[.[] | {id: .id, name: .name, kinds: .kinds, enabled: false, firstParty: .firstParty}]' 2>/dev/null || echo "[]")
+  fi
+
+  if [[ $json == "true" ]]; then
+    printf '%s\n' "$shell_json"
+    return 0
+  fi
+
+  jq -r '
+    .[] |
+    [
+      .id,
+      (if .enabled then "active" else "inactive" end),
+      (if .firstParty then "built-in" else "user" end),
+      ((.kinds // []) | join(",")),
+      (.name // .id)
+    ] | @tsv
+  ' <<<"$shell_json" | awk -F '\t' '
+    BEGIN { printf "\033[1m%-34s %-10s %-10s %-18s %s\033[0m\n", "ID", "STATE", "SOURCE", "KINDS", "NAME" }
+    {
+      state_color = ($2 == "active" ? "\033[32m" : "\033[90m")
+      src_color = ($3 == "built-in" ? "\033[36m" : "\033[33m")
+      printf "%-34s %s%-10s\033[0m %s%-10s\033[0m %-18s %s\n", $1, state_color, $2, src_color, $3, $4, $5
+    }
+  '
 }
 
-show_info() {
-  python3 -c "
-import json
-with open('$REGISTRY') as f: r = json.load(f)
-for p in r.get('plugins', []):
-    if p['id'] == '$QUERY' or p['name'].lower() == '$QUERY'.lower():
-        print(f\"Name:        {p['name']}\")
-        print(f\"ID:          {p['id']}\")
-        print(f\"Description: {p['description']}\")
-        print(f\"Author:      {p['author']}\")
-        print(f\"Category:    {p['category']}\")
-        print(f\"Tags:        {', '.join(p.get('tags', []))}\")
-        print(f\"Status:      {p['status']}\")
-        print(f\"Kind:        {p['kind']}\")
-        print(f\"Install:     {p['installCommand']}\")
-        exit(0)
-print('Plugin not found: $QUERY')
-"
+cmd_marketplace() {
+  local query=""
+  local category=""
+  local json="false"
+  local force="false"
+
+  while (( $# > 0 )); do
+    case "$1" in
+      --fetch|-f) force="true" ;;
+      --json) json="true" ;;
+      --query|-q) query="${2:-}"; shift ;;
+      --category|-c) category="${2:-}"; shift ;;
+      *) [[ -z $query ]] && query="$1" ;;
+    esac
+    shift
+  done
+
+  ensure_marketplace_catalog "$force"
+
+  local filtered
+  filtered=$(jq \
+    --arg q "$query" \
+    --arg cat "$category" '
+      .plugins
+      | map(select(
+          ($cat == "" or (.category // "" | ascii_downcase) == ($cat | ascii_downcase)) and
+          ($q == "" or
+            (.name // "" | ascii_downcase | contains($q | ascii_downcase)) or
+            (.id // "" | ascii_downcase | contains($q | ascii_downcase)) or
+            (.description // "" | ascii_downcase | contains($q | ascii_downcase)) or
+            ((.tags // []) | join(" ") | ascii_downcase | contains($q | ascii_downcase)) or
+            (.author // "" | ascii_downcase | contains($q | ascii_downcase))
+          )
+        ))
+    ' "$MARKETPLACE_CACHE")
+
+  if [[ $json == "true" ]]; then
+    printf '%s\n' "$filtered"
+    return 0
+  fi
+
+  local count
+  count=$(jq 'length' <<<"$filtered")
+  log "Marketplace catalog: $count matching plugins"
+  echo ""
+
+  jq -r '
+    .[] |
+    [
+      (.name // .id | gsub("\t|\n"; " ")),
+      (.category // "Misc" | gsub("\t|\n"; " ")),
+      (.kind // "Plugin" | gsub("\t|\n"; " ")),
+      (if ((.stars // 0) > 0) then ("★ " + ((.stars // 0)|tostring)) else "-" end),
+      .id,
+      (.description // "-" | gsub("\t|\n"; " "))
+    ] | @tsv
+  ' <<<"$filtered" | while IFS=$'\t' read -r name cat kind stars id desc; do
+    printf '  \033[1;35m%-32s\033[0m \033[36m[%s]\033[0m \033[33m%s\033[0m \033[32m%s\033[0m\n' "$name" "$cat" "$kind" "$stars"
+    printf '    \033[90mID:\033[0m %-30s \033[90m%s\033[0m\n' "$id" "$desc"
+    echo ""
+  done
 }
 
-install_plugin() {
-  local cmd
-  cmd=$(python3 -c "
-import json
-with open('$REGISTRY') as f: r = json.load(f)
-for p in r.get('plugins', []):
-    if p['id'] == '$QUERY' or p['name'].lower() == '$QUERY'.lower():
-        print(p['installCommand'])
-        exit(0)
-print('NOT_FOUND')
-")
-  [[ "$cmd" == "NOT_FOUND" ]] && err "Plugin not found: $QUERY"
-  log "Installing: $QUERY"
-  mkdir -p "$PLUGIN_DIR"
-  eval "$cmd"
-  log "Done. Restart the shell to load: pkill -x quickshell"
+cmd_install() {
+  local target="${1:-}"
+  local enable_after=false
+  shift || true
+
+  while (( $# > 0 )); do
+    case "$1" in
+      --enable|-e) enable_after=true ;;
+      *) ;;
+    esac
+    shift
+  done
+
+  [[ -n $target ]] || err "Usage: omarchy plugins install <plugin-id-or-git-url> [--enable]"
+
+  # 1. Direct Git URL
+  if [[ $target =~ ^https?:// || $target =~ ^git@ ]]; then
+    log "Installing plugin from Git URL: $target"
+    if [[ $enable_after == "true" ]]; then
+      "$OMARCHY_PATH/bin/omarchy-plugin-add" "$target" --yes --enable
+    else
+      "$OMARCHY_PATH/bin/omarchy-plugin-add" "$target" --yes
+    fi
+    return 0
+  fi
+
+  # 2. Marketplace / Catalog ID
+  ensure_marketplace_catalog false
+  local plugin_info
+  plugin_info=$(jq -c --arg id "$target" '[.plugins[] | select(.id == $id or (.name | ascii_downcase) == ($id | ascii_downcase))][0] // empty' "$MARKETPLACE_CACHE")
+
+  if [[ -z $plugin_info || $plugin_info == "null" ]]; then
+    # Try fetching fresh
+    ensure_marketplace_catalog true
+    plugin_info=$(jq -c --arg id "$target" '[.plugins[] | select(.id == $id or (.name | ascii_downcase) == ($id | ascii_downcase))][0] // empty' "$MARKETPLACE_CACHE")
+  fi
+
+  [[ -n $plugin_info && $plugin_info != "null" ]] || err "Plugin '$target' not found in marketplace catalog."
+
+  local p_id p_name p_repo p_cmd p_manifest p_kind
+  p_id=$(jq -r '.id' <<<"$plugin_info")
+  p_name=$(jq -r '.name // .id' <<<"$plugin_info")
+  p_repo=$(jq -r '.repo // empty' <<<"$plugin_info")
+  p_cmd=$(jq -r '.installCommand // empty' <<<"$plugin_info")
+  p_manifest=$(jq -r '.manifestPath // empty' <<<"$plugin_info")
+  p_kind=$(jq -r '.kind // "plugin"' <<<"$plugin_info")
+
+  log "Installing '$p_name' ($p_id)..."
+
+  # If an explicit installCommand is provided, use it
+  if [[ -n $p_cmd && $p_cmd != "null" && $p_cmd != "" ]]; then
+    if [[ $p_cmd != *"--yes"* ]]; then
+      p_cmd="$p_cmd --yes"
+    fi
+    log "Executing install command: $p_cmd"
+    mkdir -p "$PLUGINS_DIR"
+    eval "$p_cmd"
+  # If monorepo manifestPath is specified (e.g. omni/manifest.json)
+  elif [[ -n $p_manifest && -n $p_repo ]]; then
+    local subfolder="${p_manifest%/*}"
+    local tmp_stage="$PLUGINS_DIR/.stage.$p_id.$$"
+    rm -rf "$tmp_stage"
+    log "Cloning repository $p_repo..."
+    git clone --depth 1 "$p_repo" "$tmp_stage"
+    
+    local source_dir="$tmp_stage"
+    [[ -n $subfolder && -d "$tmp_stage/$subfolder" ]] && source_dir="$tmp_stage/$subfolder"
+
+    if [[ ! -f "$source_dir/manifest.json" ]]; then
+      rm -rf "$tmp_stage"
+      err "Could not find manifest.json inside $source_dir"
+    fi
+
+    local target_dir="$PLUGINS_DIR/$p_id"
+    rm -rf "$target_dir"
+    mkdir -p "$target_dir"
+    cp -r "$source_dir"/* "$target_dir"/
+    rm -rf "$tmp_stage"
+  # Otherwise standard repo
+  elif [[ -n $p_repo ]]; then
+    "$OMARCHY_PATH/bin/omarchy-plugin-add" "$p_repo" --yes
+  else
+    err "No install command or repository available for '$p_id'."
+  fi
+
+  # Rescan shell plugins
+  omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+
+  if [[ $enable_after == "true" ]]; then
+    log "Enabling $p_id..."
+    "$OMARCHY_PATH/bin/omarchy-plugin-enable" "$p_id" 2>/dev/null || true
+  fi
+
+  log "Successfully installed $p_name ($p_id)!"
 }
 
-case "$ACTION" in
-  list)    list_plugins ;;
-  search)  [[ -z $QUERY ]] && err "Usage: omarchy-plugins search <query>"; search_plugins ;;
-  info)    [[ -z $QUERY ]] && err "Usage: omarchy-plugins info <plugin-id>"; show_info ;;
-  install) [[ -z $QUERY ]] && err "Usage: omarchy-plugins install <plugin-id>"; install_plugin ;;
-  *)       echo "Usage: omarchy-plugins [list|install|search|info] [plugin-name]" ;;
+cmd_remove() {
+  local id="${1:-}"
+  [[ -n $id ]] || err "Usage: omarchy plugins remove <plugin-id>"
+  "$OMARCHY_PATH/bin/omarchy-plugin-remove" "$id" --yes
+}
+
+cmd_enable() {
+  local id="${1:-}"
+  [[ -n $id ]] || err "Usage: omarchy plugins enable <plugin-id> [placement]"
+  shift
+  "$OMARCHY_PATH/bin/omarchy-plugin-enable" "$id" "$@"
+}
+
+cmd_disable() {
+  local id="${1:-}"
+  [[ -n $id ]] || err "Usage: omarchy plugins disable <plugin-id>"
+  "$OMARCHY_PATH/bin/omarchy-plugin-disable" "$id"
+}
+
+cmd_update() {
+  "$OMARCHY_PATH/bin/omarchy-plugin-update" "$@"
+}
+
+cmd_check_updates() {
+  local count=0
+  log "Checking git-managed plugins for remote updates..."
+  for dir in "$PLUGINS_DIR"/*/; do
+    [[ -d "$dir/.git" ]] || continue
+    local p_id
+    p_id=$(basename "$dir")
+    if git -C "$dir" fetch --quiet origin HEAD 2>/dev/null; then
+      local local_rev remote_rev
+      local_rev=$(git -C "$dir" rev-parse HEAD 2>/dev/null || echo "1")
+      remote_rev=$(git -C "$dir" rev-parse FETCH_HEAD 2>/dev/null || echo "2")
+      if [[ $local_rev != "$remote_rev" ]]; then
+        printf '  \033[1;33mUpdate available:\033[0m %s\n' "$p_id"
+        (( count++ )) || true
+      fi
+    fi
+  done
+  if (( count == 0 )); then
+    log "All installed plugins are up to date."
+  else
+    log "$count plugin(s) can be updated with: omarchy plugins update"
+  fi
+}
+
+cmd_shortcut() {
+  local sub="${1:-list}"
+  shift || true
+  local keymap_file="$HOME/.config/hypr/keymap.lua"
+
+  case "$sub" in
+    list)
+      local json="false"
+      [[ "${1:-}" == "--json" ]] && json="true"
+      local list="[]"
+      if [[ -f "$keymap_file" ]]; then
+        local raw
+        raw=$(grep -E 'omarchy-shell shell (summon|toggle)' "$keymap_file" 2>/dev/null || true)
+        if [[ -n "$raw" ]]; then
+          list=$(echo "$raw" | while read -r line; do
+            [[ -z "$line" ]] && continue
+            keys=$(echo "$line" | sed -n 's/.*keys *= *"*\([^",]*\)"*.*/\1/p')
+            cmd=$(echo "$line" | sed -n 's/.*dsp *= *exec("\([^"]*\)").*/\1/p')
+            desc=$(echo "$line" | sed -n 's/.*desc *= *"*\([^",]*\)"*.*/\1/p')
+            id=$(echo "$cmd" | awk '{print $NF}')
+            jq -cn --arg id "$id" --arg keys "$keys" --arg desc "$desc" --arg cmd "$cmd" '{id: $id, keys: $keys, desc: $desc, cmd: $cmd}'
+          done | jq -s '.')
+        fi
+      fi
+
+      if [[ $json == "true" ]]; then
+        echo "$list"
+      else
+        echo "PLUGIN ID                             KEYBIND          DESCRIPTION"
+        echo "------------------------------------------------------------------"
+        jq -r '.[] | [ .id, .keys, .desc ] | @tsv' <<<"$list" | while IFS=$'\t' read -r id keys desc; do
+          printf '%-36s %-16s %s\n' "$id" "$keys" "$desc"
+        done
+      fi
+      ;;
+    get)
+      local p_id="${1:-}"
+      [[ -n $p_id ]] || err "Plugin ID required"
+      local found=""
+      if [[ -f "$keymap_file" ]]; then
+        found=$(grep -F "$p_id" "$keymap_file" 2>/dev/null | grep -v 'omarchy-plugin-manager' 2>/dev/null | sed -n 's/.*keys *= *"*\([^",]*\)"*.*/\1/p' | head -n 1 || true)
+      fi
+      echo "$found"
+      ;;
+    set)
+      local p_id="${1:-}"
+      local keys="${2:-}"
+      [[ -n $p_id ]] || err "Plugin ID required"
+      [[ -n $keys ]] || err "Key sequence required (e.g. 'SUPER + ALT + D')"
+
+      if [[ -f "$keymap_file" ]]; then
+        grep -v -F "$p_id" "$keymap_file" > "$keymap_file.tmp" || true
+        mv "$keymap_file.tmp" "$keymap_file"
+      fi
+
+      keys=$(echo "$keys" | tr '[:lower:]' '[:upper:]' | sed 's/+/ + /g' | sed 's/  */ /g' | sed 's/^ *//;s/ *$//')
+      local plugin_name="$p_id"
+      local entry="k[#k + 1] = { cat = \"Plugins\", keys = \"$keys\", dsp = exec(\"omarchy-shell shell toggle $p_id\"), desc = \"$plugin_name\" }"
+
+      if grep -q "return k" "$keymap_file"; then
+        sed -i "/return k/i $entry" "$keymap_file"
+      else
+        echo "$entry" >> "$keymap_file"
+        echo "return k" >> "$keymap_file"
+      fi
+
+      log "Set shortcut for '$p_id' to: $keys"
+      hyprctl reload >/dev/null 2>&1 || true
+      ;;
+    remove|clear|unset)
+      local p_id="${1:-}"
+      [[ -n $p_id ]] || err "Plugin ID required"
+      if [[ -f "$keymap_file" ]]; then
+        grep -v -F "$p_id" "$keymap_file" > "$keymap_file.tmp" || true
+        mv "$keymap_file.tmp" "$keymap_file"
+        hyprctl reload >/dev/null 2>&1 || true
+      fi
+      log "Cleared shortcut for '$p_id'"
+      ;;
+  esac
+}
+
+cmd_bar() {
+  local sub="${1:-list}"
+  shift || true
+  local shell_cfg="$HOME/.config/omarchy/shell.json"
+
+  case "$sub" in
+    list)
+      if [[ ! -f "$shell_cfg" ]]; then
+        echo '{"inBar":[]}'
+        return
+      fi
+      jq -c '{
+        inBar: (([.bar.layout.left[]?.id, .bar.layout.center[]?.id, .bar.layout.right[]?.id] | unique) // []),
+        layout: (.bar.layout // {left:[], center:[], right:[]})
+      }' "$shell_cfg" 2>/dev/null || echo '{"inBar":[]}'
+      ;;
+    add)
+      local p_id="${1:-}"
+      local section="${2:-right}"
+      [[ -n $p_id ]] || err "Plugin ID required"
+      [[ $section =~ ^(left|center|right)$ ]] || section="right"
+
+      if [[ -f "$shell_cfg" ]]; then
+        local updated
+        updated=$(jq --arg id "$p_id" --arg sec "$section" '
+          if (([.bar.layout.left[]?.id, .bar.layout.center[]?.id, .bar.layout.right[]?.id] | index($id)) == null) then
+            .bar.layout[$sec] += [{"id": $id}]
+          else
+            .
+          end
+        ' "$shell_cfg")
+        echo "$updated" > "$shell_cfg"
+      fi
+      omarchy-shell shell enablePlugin "$p_id" "{\"section\":\"$section\"}" >/dev/null 2>&1 || true
+      log "Added '$p_id' to Omarchy top bar ($section section)."
+      ;;
+    remove)
+      local p_id="${1:-}"
+      [[ -n $p_id ]] || err "Plugin ID required"
+      if [[ -f "$shell_cfg" ]]; then
+        local updated
+        updated=$(jq --arg id "$p_id" '
+          .bar.layout.left = [.bar.layout.left[]? | select(.id != $id)] |
+          .bar.layout.center = [.bar.layout.center[]? | select(.id != $id)] |
+          .bar.layout.right = [.bar.layout.right[]? | select(.id != $id)]
+        ' "$shell_cfg")
+        echo "$updated" > "$shell_cfg"
+      fi
+      omarchy-shell shell setPluginEnabled "$p_id" false >/dev/null 2>&1 || true
+      log "Removed '$p_id' from Omarchy top bar."
+      ;;
+    toggle)
+      local p_id="${1:-}"
+      local section="${2:-right}"
+      [[ -n $p_id ]] || err "Plugin ID required"
+      local in_bar="false"
+      if [[ -f "$shell_cfg" ]]; then
+        in_bar=$(jq -r --arg id "$p_id" '([.bar.layout.left[]?.id, .bar.layout.center[]?.id, .bar.layout.right[]?.id] | index($id)) != null' "$shell_cfg")
+      fi
+      if [[ $in_bar == "true" ]]; then
+        cmd_bar remove "$p_id"
+      else
+        cmd_bar add "$p_id" "$section"
+      fi
+      ;;
+  esac
+}
+
+cmd_gui() {
+  quickshell -n -p "$OMARCHY_PATH/plugin-library" >/dev/null 2>&1 &
+}
+
+# Main router
+action="${1:-list}"
+shift || true
+
+case "$action" in
+  list|ls)             cmd_list "$@" ;;
+  marketplace|market|store) cmd_marketplace "$@" ;;
+  install|add)         cmd_install "$@" ;;
+  remove|rm|delete|uninstall) cmd_remove "$@" ;;
+  enable|on)           cmd_enable "$@" ;;
+  disable|off)         cmd_disable "$@" ;;
+  update|upgrade)      cmd_update "$@" ;;
+  check-updates|check) cmd_check_updates "$@" ;;
+  shortcut|keybind)    cmd_shortcut "$@" ;;
+  bar)                 cmd_bar "$@" ;;
+  gui|manager|app)     cmd_gui "$@" ;;
+  --help|-h)
+    cat <<EOF
+Usage:
+  omarchy plugins [command] [options]
+
+Commands:
+  list [--json]                        List all installed and discovered plugins
+  marketplace [--fetch] [--query <q>]  Search and browse online plugin marketplace
+  install <id-or-url> [--enable]       Install a plugin from marketplace or Git URL
+  remove <id>                          Uninstall an installed user plugin
+  enable <id> [placement]              Enable a plugin in the active shell
+  disable <id>                         Disable a plugin
+  shortcut [list|get|set|remove]       Manage keyboard shortcuts for plugins
+  bar [list|add|remove|toggle]         Manage Omarchy top bar placement for plugins
+  update [id]                          Update git-installed plugins to latest release
+  check-updates                        Check if updates are available for installed plugins
+  gui                                  Open the graphical Plugin Manager window
+EOF
+    ;;
+  *)
+    # Default to install if it looks like a URL or plugin id with args
+    if [[ $action == http* || $action == git@* ]]; then
+      cmd_install "$action" "$@"
+    else
+      err "Unknown plugins action: $action. Run 'omarchy plugins --help' for usage."
+    fi
+    ;;
 esac

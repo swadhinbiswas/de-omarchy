@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# omarchy:summary=Open the Plugin Library and Marketplace window
+# omarchy:group=plugin
+# omarchy:alias=omarchy plugin library
+
+exec "${OMARCHY_PATH:-/usr/share/de-omarchy}/bin/omarchy-plugin-manager" "$@"

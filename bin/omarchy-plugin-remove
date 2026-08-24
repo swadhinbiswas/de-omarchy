@@ -72,16 +72,16 @@ target="$PLUGINS_DIR/$id"
 [[ -e $target || -L $target ]] || fail "plugin '$id' is not installed"
 
 was_enabled=""
-shell_plugins=$(omarchy-shell shell listPlugins)
+shell_plugins=$(omarchy-shell shell listPlugins 2>/dev/null || true)
 if [[ -n $shell_plugins ]]; then
   was_enabled=$(jq -r --arg id "$id" '
     .[] | select(.id == $id) | .enabled
-  ' <<<"$shell_plugins")
+  ' <<<"$shell_plugins" 2>/dev/null || true)
 fi
 
 cloned_from=""
 if [[ -f $target/manifest.json ]]; then
-  cloned_from=$(jq -r '.omarchy.clonedFrom // empty' "$target/manifest.json")
+  cloned_from=$(jq -r '.omarchy.clonedFrom // empty' "$target/manifest.json" 2>/dev/null || true)
 fi
 
 if [[ -L $target ]]; then
@@ -93,7 +93,7 @@ else
 fi
 
 if [[ $was_enabled == "true" ]]; then
-  omarchy-shell shell setPluginEnabled "$id" false >/dev/null
+  omarchy-shell shell setPluginEnabled "$id" false >/dev/null 2>&1 || true
 fi
 
 if [[ -L $target ]]; then
@@ -114,7 +114,7 @@ else
   echo "Removed $id. Backup at: $backup"
 fi
 
-omarchy-shell shell rescanPlugins >/dev/null
+omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
 
 if [[ -n $cloned_from && $was_enabled == "true" ]]; then
   echo "Restored $cloned_from."

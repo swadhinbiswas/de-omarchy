@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "deomarchy.plugin-manager",
+  "name": "Plugin Manager",
+  "version": "1.0.0",
+  "author": "de-omarchy",
+  "description": "Manage installed plugins and discover 1,000+ community extensions from OmarchyPlugins.com",
+  "kinds": [
+    "bar-widget",
+    "panel"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Plugin Manager",
+    "description": "Enable/disable, update, install, and remove plugins",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
