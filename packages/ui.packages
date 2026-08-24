@@ -52,7 +52,7 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 woff2-font-awesome
-ttf-jetbrains-mono-nerd-basic
+ttf-jetbrains-mono-nerd
 
 # CLI helpers used by omarchy-* commands
 jq
@@ -67,3 +67,9 @@ libnotify
 python-gobject
 lazydocker
 papirus-icon-theme
+# XDG default-terminal spec implementation — Arch/CachyOS repos don't carry
+# it; comes from the AUR (install.sh falls back to the AUR helper per-package).
+xdg-terminal-exec
+# ttfx — terminal-text-effects engine behind the animated Omarchy screensaver.
+# Upstream ships it in Omarchy's own pacman repo; everywhere else it's AUR-only.
+python-terminaltexteffects

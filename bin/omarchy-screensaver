@@ -35,8 +35,37 @@ wait_for_terminal_resize() {
 
 wait_for_terminal_resize
 
+# Branding art: the user's copy first, the shipped logo as fallback. Without
+# an input file ttfx (or any renderer below) would error on every loop
+# iteration, so bail out instead.
+SCREENSAVER_INPUT="$HOME/.config/omarchy/branding/screensaver.txt"
+[[ -f $SCREENSAVER_INPUT ]] || SCREENSAVER_INPUT="${OMARCHY_PATH:-/usr/share/de-omarchy}/logo.txt"
+
+# ttfx ships only in Omarchy's own pacman repo (not Arch/CachyOS repos, not
+# the AUR), so a de-omarchy install may not have it. Render the branding art
+# statically instead of looping on command-not-found forever.
+run_static_screensaver() {
+  clear
+  cat "$SCREENSAVER_INPUT"
+  printf '\n\n  (animated effects need ttfx — showing static art)\n'
+  while screensaver_in_focus; do
+    if read -n1 -t 1; then
+      exit_screensaver
+    fi
+  done
+  exit_screensaver
+}
+
+if [[ ! -f $SCREENSAVER_INPUT ]]; then
+  exit_screensaver
+fi
+
+if ! command -v ttfx >/dev/null 2>&1; then
+  run_static_screensaver
+fi
+
 while true; do
-  ttfx -i ~/.config/omarchy/branding/screensaver.txt \
+  ttfx -i "$SCREENSAVER_INPUT" \
     --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c\
     --random-effect --no-eol --no-restore-cursor &
 
