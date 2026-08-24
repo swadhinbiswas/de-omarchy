@@ -57,7 +57,12 @@ Item {
       return false
     }
     logEvent("process-start", label + " " + command)
-    process.command = ["bash", "-lc", command]
+    // Plain -c, NOT -l: inherit this session's environment rather than
+    // re-deriving PATH through bash login profiles. The parent quickshell
+    // already carries the uwsm PATH (with $OMARCHY_PATH/bin); a login shell
+    // would silently drop it on machines whose bash profile doesn't add it,
+    // and every omarchy-* spawn would fail with "not found".
+    process.command = ["bash", "-c", command]
     process.running = true
     return true
   }
