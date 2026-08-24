@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# omarchy:summary=Open or toggle the graphical Keybindings page
+# omarchy:group=keybindings
+# omarchy:args=[--print]
+# omarchy:examples=omarchy keybindings | omarchy keybindings --print
+# omarchy:alias=omarchy key cheat sheet
+
+# --print keeps the menu pipeline usable from scripts and TUIs.
+if [[ $1 == "--print" || $1 == "-p" ]]; then
+  exec "${OMARCHY_PATH:-/usr/share/de-omarchy}/bin/omarchy-menu-keybindings" --print
+fi
+
+LOCKDIR="/tmp/omarchy-keybindings.lock"
+if ! mkdir "$LOCKDIR" 2>/dev/null; then
+  lock_age=$(( $(date +%s) - $(stat -c %Y "$LOCKDIR" 2>/dev/null || echo 0) ))
+  if (( lock_age > 3 )); then
+    rm -rf "$LOCKDIR"
+    mkdir "$LOCKDIR" 2>/dev/null || exit 0
+  else
+    exit 0
+  fi
+fi
+trap 'rm -rf "$LOCKDIR"' EXIT
+
+# The installed runtime is authoritative — never reference the dev checkout
+# here; an installed desktop must not depend on (or prefer) a home git clone.
+PATH_CANDIDATES=(
+  "${OMARCHY_PATH:-/usr/share/de-omarchy}/keybindings"
+  "/usr/share/de-omarchy/keybindings"
+)
+
+APP_PATH=""
+for p in "${PATH_CANDIDATES[@]}"; do
+  if [[ -f "$p/shell.qml" ]]; then
+    APP_PATH="$p"
+    break
+  fi
+done
+
+if [[ -z $APP_PATH ]]; then
+  echo "Keybindings QML path not found!" >&2
+  exit 1
+fi
+
+# Toggle: close when focused, focus/move otherwise, launch when absent.
+existing_window=$(hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.title == "Omarchy Keybindings") | .address' | head -n 1)
+active_window=$(hyprctl activewindow -j 2>/dev/null | jq -r '.address // empty')
+current_ws=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // "1"')
+
+if [[ -n "$existing_window" ]]; then
+  if [[ "$existing_window" == "$active_window" ]]; then
+    hyprctl dispatch "hl.dsp.window.close({ window = \"address:$existing_window\" })" >/dev/null 2>&1 || true
+    pkill -f "quickshell.*keybindings" 2>/dev/null || true
+  else
+    hyprctl dispatch "hl.dsp.window.move({ workspace = \"$current_ws\", window = \"address:$existing_window\" })" >/dev/null 2>&1 || true
+    hyprctl dispatch "hl.dsp.focus({ window = \"address:$existing_window\" })" >/dev/null 2>&1 || true
+  fi
+  exit 0
+fi
+
+# Clean up any stale instances before a fresh launch.
+pkill -f "quickshell.*keybindings" 2>/dev/null || true
+sleep 0.05
+
+if command -v uwsm-app >/dev/null 2>&1; then
+  uwsm-app -- quickshell -p "$APP_PATH" >/dev/null 2>&1 &
+else
+  setsid quickshell -p "$APP_PATH" >/dev/null 2>&1 &
+fi
+
+# Bring the new window to the current workspace and focus it.
+(
+  for (( i = 0; i < 30; i++ )); do
+    win_addr=$(hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.title == "Omarchy Keybindings") | .address' | head -n 1)
+    if [[ -n "$win_addr" ]]; then
+      hyprctl dispatch "hl.dsp.window.move({ workspace = \"$current_ws\", window = \"address:$win_addr\" })" >/dev/null 2>&1 || true
+      hyprctl dispatch "hl.dsp.focus({ window = \"address:$win_addr\" })" >/dev/null 2>&1 || true
+      break
+    fi
+    sleep 0.05
+  done
+) &
+
+exit 0

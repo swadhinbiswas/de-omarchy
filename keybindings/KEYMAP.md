@@ -44,7 +44,7 @@
 | F6, SUPER+CTRL+S | Fullshot, region shot |
 | XF86 audio/brightness/kbd | Your scripts |
 | SUPER+SHIFT+P/N/COMMA | Playerctl |
-| CTRL+SUPER+SHIFT/ALT+R | Kill/restart shell |
+| CTRL+SUPER+ALT+S | Restart Omarchy shell |
 
 \* launcher keys call the moonshell IPC target which the bridge stops at
 startup; they become no-ops until you uninstall or re-enable moonshell.
@@ -58,12 +58,14 @@ Use SUPER+SHIFT+M (Omarchy menu) instead.
 | SUPER+ALT+SPACE | Apps menu |
 | SUPER+K | Keybindings cheat sheet |
 | SUPER+CTRL+E | Emoji picker |
+| SUPER+CTRL+Y | Cycle bar style (menu picker: omarchy bar style menu) |
 | SUPER+CTRL+Q | Calculator (omacalc) |
 | SUPER+CTRL+C | Capture menu |
 | SUPER+CTRL+O | Toggles menu |
 | SUPER+CTRL+H | Hardware menu |
 | SUPER+CTRL+V | Shell clipboard panel |
 | SUPER+comma | Dismiss last notification |
+| SUPER+ALT+N | Notification center (bell widget on the bar) |
 | SUPER+ALT+comma | Invoke last notification |
 | SUPER+SHIFT+ALT+comma | Notification history |
 | SUPER+CTRL+comma | Silence notifications toggle |
