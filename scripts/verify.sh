@@ -67,6 +67,19 @@ for widget_dir in sysmon notification-center; do
     && ok "runtime plugin present: $widget_dir"
 done
 
+# SDDM login theme (only meaningful when SDDM is installed)
+if [[ -d /usr/share/sddm/themes ]]; then
+  [[ -f /usr/share/sddm/themes/omarchy/Main.qml ]] \
+    && ok "SDDM theme deployed" || bad "SDDM installed but omarchy theme missing (rerun install.sh)"
+  ACTIVE=$(grep -h '^Current=' /etc/sddm.conf.d/*.conf /etc/sddm.conf 2>/dev/null | tail -1 | cut -d= -f2)
+  if [[ -f /etc/sddm.conf.d/50-de-omarchy.conf ]]; then
+    [[ $ACTIVE == omarchy ]] && ok "SDDM active theme: omarchy" \
+                            || bad "SDDM Current=$ACTIVE but drop-in says omarchy"
+  else
+    echo "  [warn] SDDM present but no de-omarchy drop-in — login screen not themed yet"
+  fi
+fi
+
 # monitors sanity: live monitors match display/monitors.lua outputs
 if command -v hyprctl >/dev/null 2>&1 && [[ -f $(dirname "${BASH_SOURCE[0]}")/../display/monitors.lua ]]; then
   LIVE=$(hyprctl monitors all 2>/dev/null | grep -oP '^Monitor \K[^ ]+' | sort)

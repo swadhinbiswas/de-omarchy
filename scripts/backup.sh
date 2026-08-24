@@ -21,6 +21,10 @@ for f in starship.toml; do
 done
 log "DONE targeted config"
 
+# --- 1b. System configs the installer can touch (SDDM drop-in) --------------
+[[ -d /etc/sddm.conf.d ]] && { mkdir -p "$BACKUP_ROOT/sddm.conf.d"; rsync -a /etc/sddm.conf.d/ "$BACKUP_ROOT/sddm.conf.d/"; }
+log "DONE sddm.conf.d"
+
 # --- 2. Shell & identity dotfiles -------------------------------------------
 for f in .zshrc .zshenv .zprofile .zlogin .zlogout .bashrc .bash_profile \
          .p10k.zsh .gitconfig .profile; do

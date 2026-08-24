@@ -40,6 +40,13 @@ direct `pacman -Syu` is not blocked.
 - Install model: `install.sh` layers onto an EXISTING Arch/CachyOS system
   additively (backs up first, appends one marked block to hyprland.lua,
   never overwrites user files) instead of owning the machine
+- SDDM login screen: theme + greeter config vendored verbatim from upstream
+  (`default/sddm/`), deployed only when SDDM is already installed, via a new
+  `/etc/sddm.conf.d/50-de-omarchy.conf` drop-in (sorts after existing confs so
+  Current=omarchy wins without editing them). Upstream's PAM edits are
+  deliberately NOT ported: removing pam_gnome_keyring from /etc/pam.d/sddm is
+  ISO-specific and would break password keyrings on existing systems; same for
+  the sddm-autologin faillock tweak.
 
 ## Diverged shared files
 

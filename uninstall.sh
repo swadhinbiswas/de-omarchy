@@ -50,5 +50,19 @@ fi
   && sudo rm /etc/environment.d/10-de-omarchy.conf \
   && log "removed /etc/environment.d/10-de-omarchy.conf"
 
+# 3b. Remove SDDM theme + drop-in (previous theme in earlier conf.d files
+#     becomes active again automatically — we never edited those).
+if [[ -d /usr/share/sddm/themes ]]; then
+  [[ -d /usr/share/sddm/themes/omarchy ]] \
+    && sudo rm -rf /usr/share/sddm/themes/omarchy \
+    && log "removed /usr/share/sddm/themes/omarchy"
+  [[ -f /usr/share/sddm/hyprland.lua ]] \
+    && sudo rm /usr/share/sddm/hyprland.lua \
+    && log "removed /usr/share/sddm/hyprland.lua"
+fi
+[[ -f /etc/sddm.conf.d/50-de-omarchy.conf ]] \
+  && sudo rm /etc/sddm.conf.d/50-de-omarchy.conf \
+  && log "removed /etc/sddm.conf.d/50-de-omarchy.conf (previous SDDM theme resumes)"
+
 log "Done. Your desktop is back to the pre-de-omarchy state after 'hyprctl reload'."
 log "Full snapshot backups remain in: $BACKUP_ROOT"

@@ -32,7 +32,7 @@
 
 ---
 
-de-omarchy takes the [Omarchy](https://github.com/basecamp/omarchy) experience — the bar, launcher, theming, notifications, lock screen, screensaver — and installs it as a **self-contained desktop layer** on top of your existing system. No ISO, no bootloader, no display manager, no mirrors touched. Everything it adds is additive, marked, and reversible.
+de-omarchy takes the [Omarchy](https://github.com/basecamp/omarchy) experience — the bar, launcher, theming, notifications, lock screen, screensaver — and installs it as a **self-contained desktop layer** on top of your existing system. No ISO, no bootloader, no new display manager, no mirrors touched. Everything it adds is additive, marked, and reversible.
 
 Your system stays yours. Your bindings win. Uninstalling puts everything back exactly as it was.
 
@@ -48,6 +48,7 @@ Your system stays yours. Your bindings win. Uninstalling puts everything back ex
 | **Plugin marketplace** | Browse and install community plugins (<kbd>SUPER</kbd>+<kbd>SHIFT</kbd>+<kbd>I</kbd>) |
 | **Monitor Manager** | Visual multi-monitor arrangement, <kbd>SUPER</kbd>+<kbd>CTRL</kbd>+<kbd>M</kbd> |
 | **Animated screensaver** | Terminal-text-effects at 120 fps — the real upstream behavior |
+| **Omarchy login screen** | SDDM greeter themed like upstream, running on a bare Hyprland session |
 | **~440 CLI commands** | One `omarchy` entry point; every command self-documents for humans *and* AI agents |
 
 ## Installation
@@ -78,9 +79,9 @@ Idempotent. Safe to re-run any time.
 > [!IMPORTANT]
 > **The safety contract**
 >
-> **Never touched:** `pacman.conf`, mirrors, repos, kernel, bootloader, display manager, monitors layout, `.zshrc`, `.zshenv`, `starship.toml`, `kitty.conf`, SSH keys. Nothing in `$HOME` is deleted or overwritten.
+> **Never touched:** `pacman.conf`, mirrors, repos, kernel, bootloader, display-manager binaries and PAM stack, monitors layout, `.zshrc`, `.zshenv`, `starship.toml`, `kitty.conf`, SSH keys. Nothing in `$HOME` is deleted or overwritten.
 >
-> **Added:** the runtime dir, the four symlinks, the marked Hyprland block, `/etc/environment.d/10-de-omarchy.conf`, a PAM stanza for the lock screen, and `/usr/bin` symlinks for a dozen commands.
+> **Added:** the runtime dir, the four symlinks, the marked Hyprland block, `/etc/environment.d/10-de-omarchy.conf`, a PAM stanza for the lock screen, `/usr/bin` symlinks for a dozen commands — and, when SDDM is already installed, an Omarchy login theme plus its own drop-in config (remove it to fall back to your previous login screen).
 
 To undo completely:
 

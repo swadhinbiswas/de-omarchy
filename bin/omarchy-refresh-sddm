@@ -1,7 +1,20 @@
 #!/bin/bash
 
-# omarchy:summary=Refresh the SDDM theme from default
+# omarchy:summary=Refresh the SDDM login theme from the runtime copy
+# omarchy:group=sddm
 # omarchy:requires-sudo=true
+# omarchy:examples=omarchy-refresh-sddm
+set -euo pipefail
+
+OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/de-omarchy}"
+
+if [[ ! -d /usr/share/sddm/themes ]]; then
+  echo "SDDM is not installed — nothing to refresh." >&2
+  exit 1
+fi
 
 sudo rm -rf /usr/share/sddm/themes/omarchy
 sudo cp -r "$OMARCHY_PATH/default/sddm/omarchy" /usr/share/sddm/themes/omarchy
+sudo cp "$OMARCHY_PATH/default/sddm/hyprland.lua" /usr/share/sddm/hyprland.lua
+
+echo "SDDM theme refreshed — applies the next time the login screen appears."

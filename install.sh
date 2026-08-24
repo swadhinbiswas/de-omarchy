@@ -282,6 +282,32 @@ if [[ ! -f /etc/pam.d/omarchy-lock-password ]]; then
 fi
 
 # ----------------------------------------------------------------------------
+# 6b. SDDM login screen — upstream's Omarchy greeter (only if SDDM installed)
+#
+# Additive by design: the theme lands in its own dir under themes/, and the
+# settings arrive as a NEW drop-in file named to sort AFTER any existing
+# /etc/sddm.conf.d/*.conf, so Current=omarchy wins without editing anything.
+# Deleting our drop-in (or running uninstall.sh) restores the previous theme
+# untouched. Requires no display-manager binaries or PAM changes.
+# ----------------------------------------------------------------------------
+if [[ -d /usr/share/sddm/themes && -f /etc/pam.d/sddm ]]; then
+  log "Installing SDDM login theme (Omarchy greeter on Hyprland)"
+  sudo rm -rf /usr/share/sddm/themes/omarchy
+  sudo cp -r "$RUNTIME/default/sddm/omarchy" /usr/share/sddm/themes/omarchy
+  sudo install -m 644 "$RUNTIME/default/sddm/hyprland.lua" /usr/share/sddm/hyprland.lua
+  printf '%s\n' \
+    '[Theme]' 'Current=omarchy' \
+    '' \
+    '[General]' 'DisplayServer=wayland' \
+    '' \
+    '[Wayland]' \
+    'CompositorCommand=start-hyprland -- --config /usr/share/sddm/hyprland.lua' \
+    | sudo tee /etc/sddm.conf.d/50-de-omarchy.conf >/dev/null
+else
+  log "SDDM not detected — skipping login theme"
+fi
+
+# ----------------------------------------------------------------------------
 # 7. Clean up stale host config (additive: comments out dead code)
 # ----------------------------------------------------------------------------
 log "Cleaning up stale host config"
