@@ -61,9 +61,9 @@ cat <<BANNER
     2. Missing UI packages installed (system layer untouched)
     3. Runtime deployed to $RUNTIME
     4. Additive user config hooks installed:
-         ~/.config/hypr/{deo-layer,deo-bindings,deo-autostart}.lua  (new symlinks)
+         ~/.config/hypr/{deo-layer,deo-bindings,deo-autostart}.lua  (symlinks -> runtime)
          ~/.config/hypr/hyprland.lua                                (marked block APPENDED)
-         ~/.config/zshrc.d/50-de-omarchy.zsh                        (new symlink;
+         ~/.config/zshrc.d/50-de-omarchy.zsh                        (symlink -> runtime;
           your .zshrc already sources this dir — zero edits to .zshrc)
     5. Omarchy state initialized + rose-pine theme applied
 
@@ -143,6 +143,10 @@ sudo mkdir -p "$RUNTIME"
 sudo rsync -a --delete \
   "$REPO_DIR/bin" "$REPO_DIR/shell" "$REPO_DIR/themes" \
   "$REPO_DIR/applications" "$REPO_DIR/default" "$REPO_DIR/config" \
+  "$REPO_DIR/keybindings" "$REPO_DIR/plugin-library" \
+  "$REPO_DIR/monitor-manager" \
+  "$REPO_DIR/packages" \
+  "$REPO_DIR/registry.json" "$REPO_DIR/logo.txt" "$REPO_DIR/icon.txt" \
   "$RUNTIME/"
 sudo chmod +x "$RUNTIME"/bin/* 2>/dev/null || true
 
@@ -156,7 +160,7 @@ log "Symlinking key commands to /usr/bin"
 for cmd in omarchy-dns omarchy-menu omarchy-shell omarchy-theme-set omarchy-theme-list \
            omarchy-theme-bg-set omarchy-theme-bg-next omarchy-theme-refresh \
            omarchy-capture-screenshot omarchy-capture-region omarchy-capture-text \
-           omarchy-system-lock omarchy-restart-shell; do
+           omarchy-system-lock omarchy-restart-shell omarchy-keybindings omarchy-plugin-manager; do
   [[ -f "$RUNTIME/bin/$cmd" ]] && sudo ln -sf "$RUNTIME/bin/$cmd" "/usr/bin/$cmd" 2>/dev/null
 done
 
@@ -165,12 +169,15 @@ done
 # ----------------------------------------------------------------------------
 log "Installing user config hooks"
 
+# Symlinks point at the RUNTIME copy, never at this git checkout: after
+# install, the desktop must keep working even if the repo is moved or deleted.
+# The runtime copies are refreshed by every install.sh / rsync run.
 mkdir -p "$HOME/.config/hypr" "$HOME/.config/zshrc.d"
 
-ln -sfn "$REPO_DIR/config/hypr/deo-layer.lua"     "$HOME/.config/hypr/deo-layer.lua"
-ln -sfn "$REPO_DIR/config/hypr/deo-bindings.lua"  "$HOME/.config/hypr/deo-bindings.lua"
-ln -sfn "$REPO_DIR/config/hypr/deo-autostart.lua" "$HOME/.config/hypr/deo-autostart.lua"
-ln -sfn "$REPO_DIR/config/zshrc.d/50-de-omarchy.zsh" "$HOME/.config/zshrc.d/50-de-omarchy.zsh"
+ln -sfn "$RUNTIME/config/hypr/deo-layer.lua"     "$HOME/.config/hypr/deo-layer.lua"
+ln -sfn "$RUNTIME/config/hypr/deo-bindings.lua"  "$HOME/.config/hypr/deo-bindings.lua"
+ln -sfn "$RUNTIME/config/hypr/deo-autostart.lua" "$HOME/.config/hypr/deo-autostart.lua"
+ln -sfn "$RUNTIME/config/zshrc.d/50-de-omarchy.zsh" "$HOME/.config/zshrc.d/50-de-omarchy.zsh"
 
 # Default omarchy user-state config (extensions/hooks/themed) — never overwrite.
 if [[ -d $REPO_DIR/config/omarchy ]]; then
@@ -193,6 +200,56 @@ done
 if [[ -d $REPO_DIR/config/nvim ]]; then
   mkdir -p "$HOME/.config/nvim"
   rsync -a --ignore-existing "$REPO_DIR/config/nvim/" "$HOME/.config/nvim/"
+fi
+
+# CapsLock emoji compose sequences — only when the user has no XCompose of
+# their own. The include points at the runtime copy, so theme-independent.
+XCOMPOSE="$HOME/.XCompose"
+if [[ ! -f $XCOMPOSE && -f "$RUNTIME/default/xcompose" ]]; then
+  printf 'include "%s"\n' "$RUNTIME/default/xcompose" > "$XCOMPOSE"
+  log "deployed $XCOMPOSE (CapsLock emoji compose; delete to opt out)"
+fi
+
+# Voxtype dictation config template — same never-overwrite rule as above.
+VOXTYPE_CFG="$HOME/.config/voxtype/config.toml"
+if [[ ! -f $VOXTYPE_CFG && -f "$RUNTIME/default/voxtype/config.toml" ]]; then
+  mkdir -p "$(dirname "$VOXTYPE_CFG")"
+  cp "$RUNTIME/default/voxtype/config.toml" "$VOXTYPE_CFG"
+  log "deployed $VOXTYPE_CFG"
+fi
+
+# Branding art for the About window and screensaver — never-overwrite: the
+# user's edits (omarchy branding …) survive reinstalls. Without these the
+# branding editors fail with "no such file or directory" and the screensaver
+# has nothing to draw.
+if [[ -f "$RUNTIME/logo.txt" ]]; then
+  mkdir -p "$HOME/.config/omarchy/branding"
+  for art in screensaver:logo.txt about:icon.txt; do
+    dst_name=${art%%:*}; src_name=${art##*:}
+    dst="$HOME/.config/omarchy/branding/$dst_name.txt"
+    if [[ ! -f $dst ]]; then
+      cp "$RUNTIME/$src_name" "$dst"
+      log "deployed $dst"
+    fi
+  done
+fi
+
+# AI agent skills: symlink the bundled Omarchy/diagnose-crash skills into
+# every known agent skill directory (same loop omarchy-provision-user runs;
+# safe to re-run, ln -sfn is idempotent).
+if [[ -d $RUNTIME/default/agents/skills ]]; then
+  log "Linking agent skills"
+  mkdir -p "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills" \
+    "$HOME/.pi/agent/skills" "$HOME/.gemini/config/skills"
+  for skill_dir in "$RUNTIME"/default/agents/skills/*/; do
+    skill_name=${skill_dir%/}
+    skill_name=${skill_name##*/}
+    ln -sfn "$skill_dir" "$HOME/.agents/skills/$skill_name"
+    ln -sfn "$skill_dir" "$HOME/.claude/skills/$skill_name"
+    ln -sfn "$skill_dir" "$HOME/.codex/skills/$skill_name"
+    ln -sfn "$skill_dir" "$HOME/.pi/agent/skills/$skill_name"
+    ln -sfn "$skill_dir" "$HOME/.gemini/config/skills/$skill_name"
+  done
 fi
 
 # Append the marked activation block to hyprland.lua (idempotent).
