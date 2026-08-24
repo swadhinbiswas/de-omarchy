@@ -55,6 +55,9 @@ woff2-font-awesome
 ttf-jetbrains-mono-nerd
 
 # CLI helpers used by omarchy-* commands
+# mise — tool-version manager behind `omarchy default agent <name>` installs
+# (claude/codex/grok/… via its npm/github backends). Repo package everywhere.
+mise
 jq
 socat
 gum

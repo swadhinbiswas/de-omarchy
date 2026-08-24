@@ -41,11 +41,36 @@ esac
 
 agent_package=${agent_package:-$agent}
 
-if [[ $installing == "false" ]] && ! mise where "$agent_package" &>/dev/null; then
+# "Installed" means mise-managed — or simply on PATH (an agent installed by its
+# own installer counts; mise is preferred but must not be a hard requirement).
+installed=false
+if command -v mise &>/dev/null && mise where "$agent_package" &>/dev/null; then
+  installed=true
+elif command -v "$agent" &>/dev/null; then
+  installed=true
+fi
+
+if [[ $installing == "false" && $installed == "false" ]]; then
   exec omarchy-launch-floating-terminal-with-presentation omarchy-default-agent --install "$agent"
 fi
 
-if ! mise use -g "$agent_package"; then
+if command -v mise &>/dev/null; then
+  # mise present: manage through it, exactly like upstream.
+  install_ok=true
+  mise use -g "$agent_package" || install_ok=false
+elif [[ $installed == "false" && $agent == opencode ]]; then
+  # OpenCode ships an official standalone installer; use it when mise is absent.
+  echo "Installing OpenCode via the official installer…"
+  install_ok=true
+  curl -fsSL https://opencode.ai/install | bash || install_ok=false
+elif [[ $installed == "false" ]]; then
+  install_ok=false
+  echo "mise is required to install $name: sudo pacman -S mise, then rerun." >&2
+else
+  install_ok=true
+fi
+
+if [[ $install_ok == "false" ]]; then
   if [[ $installing == "true" ]]; then
     echo "Could not install $name with mise" >&2
   else
