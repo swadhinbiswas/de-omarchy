@@ -1,0 +1,60 @@
+name: Installation problem
+description: install.sh failed, warned, or left something half-deployed
+labels: ["install", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The installer is designed to be additive and reversible. If it broke
+        something, that's a bug worth fixing properly — this template collects
+        exactly what the fix needs.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: Ran `./scripts/diff-preview.sh` before installing
+        - label: The backup step completed (`~/.de-omarchy-backups/<timestamp>/` exists)
+        - label: Every sudo prompt succeeded (no aborted password prompt)
+        - label: Re-running `./install.sh` does not change the outcome
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Which installer phase?
+      options:
+        - Backup
+        - Packages (pacman / AUR helper)
+        - Runtime deploy (rsync to /usr/share/de-omarchy)
+        - User config hooks (symlinks, hyprland.lua block)
+        - PAM / lock screen
+        - Theme init
+        - Verification (scripts/verify.sh)
+        - Uninstaller
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Full installer output
+      description: Including any warnings in yellow — warnings are diagnostics too.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: distro
+    attributes:
+      label: Distro
+      placeholder: CachyOS rolling
+    validations:
+      required: true
+
+  - type: input
+    id: aur-helper
+    attributes:
+      label: AUR helper
+      description: "`command -v paru yay` — leave blank if neither is installed."
+      placeholder: paru

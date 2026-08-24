@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an improvement or new capability for de-omarchy
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or missing capability
+      description: What are you trying to do that de-omarchy doesn't let you do (or makes awkward)?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should happen instead? Commands, keybindings, or UI sketches welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: upstream
+    attributes:
+      label: Upstream behavior
+      description: |
+        Does upstream Omarchy already do this? Link the relevant commit, script,
+        or manual chapter — if it's an upstream feature we lack, porting it is
+        usually the fastest path.
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Are you willing to help build it?
+      options:
+        - "Yes — I can open a PR"
+        - "Yes — with guidance"
+        - "No — just requesting"
+    validations:
+      required: true

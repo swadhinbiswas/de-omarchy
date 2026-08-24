@@ -6,6 +6,8 @@ de-omarchy takes the [Omarchy](https://github.com/omarchy/omarchy) Hyprland expe
 
 Ported from Omarchy by DHH (MIT). See [Credits](#credits).
 
+[Discord](https://discord.gg/4fZ8fawe6) · [Issue tracker](https://github.com/swadhinbiswas/de-omarchy/issues) · [Upstream Omarchy](https://github.com/basecamp/omarchy)
+
 ---
 
 ## Highlights
@@ -181,6 +183,10 @@ de-omarchy/
 ## Documentation
 
 The full [Omarchy Manual](manual/) ships vendored — 51 chapters covering navigation, theming, plugins, updates, troubleshooting, and more. Start at [`manual/01-welcome-to-omarchy.md`](manual/01-welcome-to-omarchy.md). Fork-specific deltas live in [`docs/FORK-NOTES.md`](docs/FORK-NOTES.md); where the two disagree, FORK-NOTES wins.
+
+## Community
+
+Questions, screenshots, theme shares, and help live on the **[de-omarchy Discord](https://discord.gg/4fZ8fawe6)** — it's the fastest way to reach people. Bug reports and feature requests belong on the [issue tracker](https://github.com/swadhinbiswas/de-omarchy/issues); GitHub has templates for bugs, installation problems, and features. Anything that reproduces in upstream Omarchy itself should go to [upstream](https://github.com/basecamp/omarchy) instead.
 
 ## Credits
 

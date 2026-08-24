@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Community Discord
+    url: https://discord.gg/4fZ8fawe6
+    about: Questions, help, and general chat — usually faster than an issue for "how do I…" questions.
+  - name: Upstream Omarchy
+    url: https://github.com/basecamp/omarchy
+    about: de-omarchy is a port — issues that reproduce in upstream Omarchy itself belong there.

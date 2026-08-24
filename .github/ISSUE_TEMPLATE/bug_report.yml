@@ -1,0 +1,79 @@
+name: Bug report
+description: Something in de-omarchy is broken or misbehaving
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The **environment** section matters more than the
+        description — a desktop layer sits on top of your distro, so version drift
+        is the number-one cause of "works on mine".
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of de-omarchy?
+      options:
+        - Bar / bar widgets (Quickshell)
+        - Panels, menus, launcher
+        - Themes / theming engine
+        - Keybindings / Hyprland config
+        - CLI (`omarchy` and `omarchy-*` commands)
+        - Plugins / Plugin Library / Monitor Manager
+        - Notifications / notification center
+        - Lock screen / idle / screensaver
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected to see instead.
+      placeholder: Clicked SUPER+CTRL+M expecting Monitor Manager; nothing appeared.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: distro
+    attributes:
+      label: Distro and kernel
+      description: "`cat /etc/os-release | head -2` and `uname -r`"
+      placeholder: CachyOS, 7.1.8-1-cachyos
+    validations:
+      required: true
+
+  - type: textarea
+    id: versions
+    attributes:
+      label: Component versions
+      description: Output of these three commands.
+      render: shell
+      value: |
+        hyprctl version
+        quickshell --version
+        echo "$OMARCHY_PATH"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or console output
+      description: |
+        Quickshell stderr (from the terminal where you ran `omarchy-restart-shell`,
+        or `journalctl --user --grep quickshell -n 100`). For installer issues,
+        paste the full installer output instead.
+      render: shell
