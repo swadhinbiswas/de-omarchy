@@ -8,3 +8,4 @@ backups/
 
 # OS noise
 .DS_Store
+.understand-anything/
