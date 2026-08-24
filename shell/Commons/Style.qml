@@ -476,6 +476,58 @@ QtObject {
     }
   }
 
+  // Icon glyphs are Private Use Area codepoints (Nerd Font, FontAwesome,
+  // Material Symbols…). No single installed font covers every range, and the
+  // generic `monospace` alias can resolve to a family missing the exact
+  // glyph (tofu boxes). fontconfig answers per codepoint, so ask it once per
+  // distinct glyph, cache forever, and render that glyph in a family that
+  // actually carries it. OpticalGlyph consults this for every PUA glyph.
+  property var iconFamilyCache: ({})
+
+  property var iconQueryQueue: []
+  property bool iconQueryInFlight: false
+
+  function iconFamilyFor(text) {
+    var cp = 0
+    if (text && text.length > 0) {
+      try { cp = text.codePointAt(0) } catch (e) { cp = 0 }
+    }
+    // Below the PUA start this is ordinary text — render with the regular
+    // family; only icon codepoints get the per-glyph probe.
+    if (cp < 0xE000) return fontFamily
+    var cache = iconFamilyCache
+    if (cache[cp] !== undefined) return cache[cp]
+    if (iconQueryQueue.indexOf(cp) === -1) iconQueryQueue = iconQueryQueue.concat([cp])
+    dequeueIconQuery()
+    return fontFamily // until the probe lands; the cache reassign re-runs us
+  }
+
+  function dequeueIconQuery() {
+    if (iconQueryInFlight || iconQueryQueue.length === 0) return
+    iconQueryInFlight = true
+    iconFontProbe.command = ["/usr/bin/fc-match", "-f", "%{family[0]}", ":charset=" + iconQueryQueue[0].toString(16)]
+    iconFontProbe.running = true
+  }
+
+  property Process iconFontProbe: Process {
+    id: iconFontProbe
+    command: []
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var cp = root.iconQueryQueue.length > 0 ? root.iconQueryQueue[0] : 0
+        var family = String(text || "").trim()
+        if (family.length === 0) family = root.fontFamily
+        var cache = root.iconFamilyCache
+        cache[cp] = family
+        root.iconFamilyCache = cache
+        root.iconQueryQueue = root.iconQueryQueue.slice(1)
+        root.iconQueryInFlight = false
+        root.dequeueIconQuery()
+      }
+    }
+  }
+
   property FileView fontconfigFile: FileView {
     path: Quickshell.env("HOME") + "/.config/fontconfig/fonts.conf"
     watchChanges: true

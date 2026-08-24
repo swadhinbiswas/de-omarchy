@@ -10,6 +10,21 @@ Item {
   property color color: Color.foreground
   property bool debugBounds: false
 
+  // Icon codepoints (Nerd Font / FontAwesome / Material Symbols — the
+  // Private Use Areas) render through Style's per-glyph resolver so a family
+  // that actually contains the glyph is used; ordinary text keeps the
+  // caller's family.
+  readonly property bool iconGlyph: {
+    var cp = 0
+    if (text && text.length > 0) {
+      try { cp = text.codePointAt(0) } catch (e) { cp = 0 }
+    }
+    return cp >= 0xE000
+  }
+  readonly property string resolvedFamily: root.iconGlyph
+    ? Style.iconFamilyFor(root.text)
+    : root.fontFamily
+
   readonly property int renderedFontSize: Math.max(1, Math.round(fontSize))
   readonly property real tightWidth: Math.max(1, glyphMetrics.tightBoundingRect.width)
   readonly property real horizontalCorrection: glyph.implicitWidth / 2 - (glyphMetrics.tightBoundingRect.x + tightWidth / 2)
@@ -18,7 +33,7 @@ Item {
 
   TextMetrics {
     id: glyphMetrics
-    font.family: root.fontFamily
+    font.family: root.resolvedFamily
     font.pixelSize: root.renderedFontSize
     text: root.text
   }
@@ -31,7 +46,7 @@ Item {
     anchors.horizontalCenterOffset: root.horizontalCorrection
     text: root.text
     color: root.color
-    font.family: root.fontFamily
+    font.family: root.resolvedFamily
     font.pixelSize: root.renderedFontSize
     renderType: Text.NativeRendering
   }
