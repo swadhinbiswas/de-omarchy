@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import qs.Commons
 
@@ -95,26 +96,27 @@ Item {
   // many `showHistory` can replay.
   readonly property int historyLimit: 10
 
-  readonly property int lowPopupDuration: 5000
-  readonly property int normalPopupDuration: 8000
-  readonly property int maxPopupDuration: 30000
+  // Every toast leaves the screen on its own. Low/normal get 3s (a hovered
+  // card pauses the countdown, so longer reading is still possible);
+  // critical used to never expire — it now gets a longer but finite window,
+  // and lands in history either way.
+  readonly property int popupDuration: 3000
+  readonly property int criticalPopupDuration: 6000
 
   function durationFor(urgency, expireTimeout) {
     switch (urgency) {
     case NotificationUrgency.Critical:
-      return 0
-    case NotificationUrgency.Low:
-      return Math.min(maxPopupDuration, Math.max(lowPopupDuration, requestedDuration(expireTimeout)))
+      return Math.min(criticalPopupDuration, requestedDurationOr(expireTimeout, criticalPopupDuration))
     default:
-      return Math.min(maxPopupDuration, Math.max(normalPopupDuration, requestedDuration(expireTimeout)))
+      return Math.min(popupDuration, requestedDurationOr(expireTimeout, popupDuration))
     }
   }
 
-  function requestedDuration(expireTimeout) {
-    // FreeDesktop notification spec (and Quickshell) report expireTimeout in
-    // milliseconds, so pass it through directly.
+  // A sender may ask for less than the cap; anything at or above it is
+  // clamped to the cap so no toast outstays its welcome.
+  function requestedDurationOr(expireTimeout, fallback) {
     var ms = Number(expireTimeout || 0)
-    if (!isFinite(ms) || ms <= 0) return 0
+    if (!isFinite(ms) || ms <= 0) return fallback
     return Math.round(ms)
   }
 
@@ -947,6 +949,22 @@ Item {
   // stacked toast cards. Layer is Overlay, exclusionMode Ignore, no
   // keyboard focus — popups are passive surfaces and must never steal input
   // from the focused application.
+  //
+  // With more than one display, only the monitor holding Hyprland's focused
+  // workspace shows toasts; every other surface is parked invisible so a
+  // focus change is a visibility flip, not surface teardown (the same trick
+  // the bar uses for hide). Without a readable focus, fall back to the first
+  // screen so notifications always land somewhere.
+
+  readonly property string focusedScreenName: {
+    try {
+      var monitor = Hyprland.focusedMonitor
+      if (monitor && monitor.name) return String(monitor.name)
+    } catch (e) {
+      // No Hyprland integration in this process — use the fallback below.
+    }
+    return Quickshell.screens.length > 0 ? String(Quickshell.screens[0].name) : ""
+  }
 
   Variants {
     model: Quickshell.screens
@@ -955,7 +973,7 @@ Item {
       id: popupWindow
       required property var modelData
       screen: modelData
-      visible: popupModel.count > 0
+      visible: popupModel.count > 0 && modelData.name === service.focusedScreenName
 
       WlrLayershell.namespace: "omarchy-notifications"
       WlrLayershell.layer: WlrLayer.Overlay

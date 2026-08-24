@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "deomarchy.notification-center",
+  "name": "Notification Center",
+  "version": "1.0.0",
+  "author": "de-omarchy",
+  "description": "Browse live toasts and notification history, clear, and toggle DND from the bar",
+  "kinds": [
+    "bar-widget",
+    "panel"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Notification Center",
+    "description": "Live notifications and history, DND toggle",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
