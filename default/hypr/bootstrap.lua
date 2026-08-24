@@ -3,7 +3,9 @@
 local home = os.getenv("HOME")
 local reload_prefixes = {
   "default.hypr",
+  "keymap",
   "hypr",
+  "hyprland",
   "omarchy.current.theme",
 }
 

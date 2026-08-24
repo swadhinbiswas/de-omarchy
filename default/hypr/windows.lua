@@ -23,3 +23,7 @@ require("default.hypr.apps")
 
 -- Apply default opacity after apps have had a chance to opt out.
 o.window({ tag = "default-opacity" }, { opacity = "0.985 0.96" })
+
+-- Plugin Manager / Keybindings (standalone Quickshell windows)
+o.window({ title = "^(Omarchy Plugin Manager|Plugin Library|Omarchy Keybindings)$" }, { float = true, center = true, opaque = true, tag = "-default-opacity" })
+o.window({ class = "^(org.quickshell|quickshell)$" }, { opaque = true, tag = "-default-opacity" })

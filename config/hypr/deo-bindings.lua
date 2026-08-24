@@ -53,7 +53,7 @@ o.bind("SUPER + mouse:273", "Resize window", hl.dsp.window.resize(), { mouse = t
 o.bind("SUPER + SHIFT + M", "Omarchy menu", "omarchy-menu toggle")
 o.bind("SUPER + ALT + SPACE", "Apps menu", "omarchy-menu toggle apps")
 o.bind("SUPER + CTRL + E", "Emojis", "omarchy-shell shell toggle omarchy.emojis")
-o.bind("SUPER + K", "Keybindings", "omarchy-menu-keybindings")
+o.bind("SUPER + K", "Keybindings", "omarchy-keybindings")
 o.bind("SUPER + CTRL + Q", "Calculator", "omacalc")
 o.bind("XF86Calculator", "Calculator", "omacalc")
 o.bind("XF86PowerOff", "Power menu", "omarchy-menu toggle system", { locked = true })
@@ -64,11 +64,13 @@ o.bind("SUPER + SHIFT + CTRL + SPACE", "Theme menu", "omarchy-menu toggle theme"
 o.bind("SUPER + CTRL + A", "Audio", "omarchy-shell shell toggle omarchy.audio")
 o.bind("SUPER + CTRL + B", "Bluetooth", "omarchy-shell shell toggle omarchy.bluetooth")
 o.bind("SUPER + CTRL + W", "Network", "omarchy-shell shell toggle omarchy.network")
+o.bind("SUPER + CTRL + Y", "Cycle bar style", "omarchy-bar-style-cycle")
 
 -- Notifications
 o.bind("SUPER + comma", "Dismiss last notification", "omarchy-shell notifications dismissOne")
 o.bind("SUPER + ALT + comma", "Invoke last notification", "omarchy-shell notifications invokeLast")
 o.bind("SUPER + SHIFT + ALT + comma", "Open notification history", "omarchy-shell notifications showHistory")
+o.bind("SUPER + ALT + N", "Notification center", "omarchy-shell deomarchy.notification-center toggle")
 o.bind_toggle("SUPER + CTRL + comma", "Toggle silencing notifications", "notification-silencing")
 
 -- Toggles
@@ -85,7 +87,10 @@ o.bind("SUPER + PRINT", "Color picker", "pkill hyprpicker || hyprpicker -a")
 o.bind("SUPER + CTRL + PRINT", "Extract text (OCR) from screenshot", "omarchy-capture-text")
 
 -- Monitor manager
-o.bind("SUPER + CTRL + M", "Display", "omarchy-shell shell toggle omarchy.monitor")
+o.bind("SUPER + CTRL + M", "Monitor Manager", "omarchy-monitor-manager")
+
+-- Shell lifecycle
+o.bind("SUPER + CTRL + ALT + S", "Restart Omarchy shell", "omarchy-restart-shell")
 
 -- Laptop
 o.bind("SUPER + CTRL + Delete", "Toggle laptop display", "omarchy-hyprland-monitor-internal toggle")
