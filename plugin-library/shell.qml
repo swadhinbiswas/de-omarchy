@@ -104,6 +104,8 @@ ShellRoot {
   property bool barSectionDialogOpen: false
   property var barTargetPlugin: null
 
+  function shellQuote(v) { return "'" + String(v || "").replace(/'/g, "'\\''") + "'" }
+
   Component.onCompleted: {
     loadInstalled()
     loadMarketplace()
@@ -114,14 +116,14 @@ ShellRoot {
   // ---------------------------------------------------------------- Data Loaders
   function loadInstalled() {
     var om = Quickshell.env("OMARCHY_PATH") || "/usr/share/de-omarchy"
-    installedProc.command = ["bash", "-c", "omarchy-shell shell listPlugins 2>/dev/null || " + om + "/bin/omarchy-plugins list --json 2>/dev/null || omarchy plugins list --json 2>/dev/null || echo '[]'"]
+    installedProc.command = ["bash", "-c", "omarchy-shell shell listPlugins 2>/dev/null || " + shellQuote(om + "/bin/omarchy-plugins") + " list --json 2>/dev/null || omarchy plugins list --json 2>/dev/null || echo '[]'"]
     installedProc.running = true
   }
 
   function loadMarketplace() {
     var home = Quickshell.env("HOME")
     var om = Quickshell.env("OMARCHY_PATH") || "/usr/share/de-omarchy"
-    marketProc.command = ["bash", "-c", "cat " + home + "/.cache/omarchy/marketplace_catalog.json 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || " + om + "/bin/omarchy-plugins marketplace --json 2>/dev/null || cat " + om + "/registry.json 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || echo '[]'"]
+    marketProc.command = ["bash", "-c", "cat " + shellQuote(home + "/.cache/omarchy/marketplace_catalog.json") + " 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || " + shellQuote(om + "/bin/omarchy-plugins") + " marketplace --json 2>/dev/null || cat " + shellQuote(om + "/registry.json") + " 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || echo '[]'"]
     marketProc.running = true
   }
 
@@ -424,7 +426,7 @@ ShellRoot {
     plugin.enabled = targetState
     applyInstalledFilter()
 
-    actionProc.command = ["bash", "-c", "omarchy plugins " + (targetState ? "enable" : "disable") + " '" + plugin.id + "'"]
+    actionProc.command = ["bash", "-c", "omarchy plugins " + (targetState ? "enable" : "disable") + " " + shellQuote(plugin.id)]
     actionProc.targetAction = "toggle"
     actionProc.targetName = plugin.name || plugin.id
     actionProc.targetState = targetState
@@ -434,7 +436,7 @@ ShellRoot {
   function toggleBarPlacement(plugin) {
     if (!plugin || !plugin.id) return
     if (isPluginInBar(plugin.id)) {
-      actionProc.command = ["bash", "-c", "omarchy plugins bar remove '" + plugin.id + "'"]
+      actionProc.command = ["bash", "-c", "omarchy plugins bar remove " + shellQuote(plugin.id)]
       actionProc.targetAction = "bar_remove"
       actionProc.targetName = plugin.name || plugin.id
       actionProc.running = true
@@ -450,7 +452,7 @@ ShellRoot {
     if (!plugin || !plugin.id) return
 
     showToast("Adding " + (plugin.name || plugin.id) + " to bar (" + section + ")...", "info")
-    actionProc.command = ["bash", "-c", "omarchy plugins bar add '" + plugin.id + "' " + section]
+    actionProc.command = ["bash", "-c", "omarchy plugins bar add " + shellQuote(plugin.id) + " " + shellQuote(section)]
     actionProc.targetAction = "bar_add"
     actionProc.targetName = plugin.name || plugin.id
     actionProc.running = true
@@ -470,12 +472,12 @@ ShellRoot {
     if (!p) return
 
     if (keys === "") {
-      actionProc.command = ["bash", "-c", "omarchy plugins shortcut remove '" + p.id + "'"]
+      actionProc.command = ["bash", "-c", "omarchy plugins shortcut remove " + shellQuote(p.id)]
       actionProc.targetAction = "shortcut_remove"
       actionProc.targetName = p.name || p.id
       actionProc.running = true
     } else {
-      actionProc.command = ["bash", "-c", "omarchy plugins shortcut set '" + p.id + "' '" + keys + "'"]
+      actionProc.command = ["bash", "-c", "omarchy plugins shortcut set " + shellQuote(p.id) + " " + shellQuote(keys)]
       actionProc.targetAction = "shortcut_set"
       actionProc.targetName = p.name || p.id
       actionProc.running = true
@@ -492,7 +494,7 @@ ShellRoot {
     root.installingId = p.id
     showToast("Installing " + (p.name || p.id) + "...", "info")
 
-    actionProc.command = ["bash", "-c", "omarchy plugins install '" + p.id + "' --enable"]
+    actionProc.command = ["bash", "-c", "omarchy plugins install " + shellQuote(p.id) + " --enable"]
     actionProc.targetAction = "install"
     actionProc.targetName = p.name || p.id
     actionProc.running = true
@@ -505,7 +507,7 @@ ShellRoot {
     root.urlInput = ""
     showToast("Installing: " + url + "...", "info")
 
-    actionProc.command = ["bash", "-c", "omarchy plugins install '" + url + "' --enable"]
+    actionProc.command = ["bash", "-c", "omarchy plugins install " + shellQuote(url) + " --enable"]
     actionProc.targetAction = "install"
     actionProc.targetName = url
     actionProc.running = true
@@ -523,7 +525,7 @@ ShellRoot {
     if (!p) return
 
     showToast("Removing " + (p.name || p.id) + "...", "info")
-    actionProc.command = ["bash", "-c", "omarchy plugins remove '" + p.id + "'"]
+    actionProc.command = ["bash", "-c", "omarchy plugins remove " + shellQuote(p.id)]
     actionProc.targetAction = "remove"
     actionProc.targetName = p.name || p.id
     actionProc.running = true
@@ -597,6 +599,26 @@ ShellRoot {
     minimumWidth: 840
     minimumHeight: 600
     color: root.bgBase
+
+    // ESC handling: dismiss modals first, then close the standalone window.
+    // Priority BeforeItem so it fires even when a TextField has focus.
+    Item {
+      anchors.fill: parent
+      focus: true
+      Keys.priority: Keys.BeforeItem
+      Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+          if (root.urlDialogOpen) { root.urlDialogOpen = false; event.accepted = true; return }
+          if (root.confirmUninstallOpen) { root.confirmUninstallOpen = false; event.accepted = true; return }
+          if (root.shortcutDialogOpen) { root.shortcutDialogOpen = false; event.accepted = true; return }
+          if (root.barSectionDialogOpen) { root.barSectionDialogOpen = false; event.accepted = true; return }
+          if (root.restartDialogOpen) { root.restartDialogOpen = false; event.accepted = true; return }
+          Qt.quit()
+          event.accepted = true
+        }
+      }
+      Component.onCompleted: forceActiveFocus()
+    }
 
     Rectangle {
       anchors.fill: parent

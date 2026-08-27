@@ -50,11 +50,14 @@ grep -q . "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null \
   && ok "current theme: $(cat "$HOME/.local/state/omarchy/current/theme.name")" \
   || warn_no_theme=1
 
-# screensaver engine: ttfx is AUR-only; without it the screensaver falls back
-# to static art by design — warn (don't fail) with the exact fix.
+# screensaver engine: `ttfx` ships in upstream's repo, `tte` comes from the
+# AUR python-terminaltexteffects; without either the screensaver falls back to
+# static art by design — warn (don't fail) with the exact fix.
 if [[ -f $RUNTIME/bin/omarchy-screensaver ]]; then
   if command -v ttfx >/dev/null 2>&1; then
     ok "screensaver: animated (ttfx found)"
+  elif command -v tte >/dev/null 2>&1; then
+    ok "screensaver: animated (tte found)"
   else
     echo "  [warn] screensaver will be STATIC art — install the AUR package for animated:"
     echo "         paru -S python-terminaltexteffects"

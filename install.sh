@@ -110,12 +110,30 @@ if (( ! SKIP_PACKAGES )); then
     log "All UI packages already present"
   else
     log "Installing missing UI packages: ${MISSING[*]}"
-    # Repo packages first, in ONE transaction (single sudo prompt).
+    # Repo packages first, in ONE transaction (single sudo prompt). Mirror
+    # hiccups (404 on a .sig, timeouts — mirrors lag upstream by minutes) get
+    # three attempts; failure here WARNS and continues rather than aborting,
+    # because nothing in this layer is allowed to break an existing desktop.
+    # Anything still missing afterwards falls through to the AUR loop below.
     REPO_PKGS=()
     for pkg in "${MISSING[@]}"; do
       pacman -Si "$pkg" >/dev/null 2>&1 && REPO_PKGS+=("$pkg")
     done
-    (( ${#REPO_PKGS[@]} > 0 )) && sudo pacman -S --needed --noconfirm "${REPO_PKGS[@]}"
+    if (( ${#REPO_PKGS[@]} > 0 )); then
+      repo_ok=false
+      for attempt in 1 2 3; do
+        if sudo pacman -S --needed --noconfirm "${REPO_PKGS[@]}"; then
+          repo_ok=true
+          break
+        fi
+        warn "repo transaction failed (attempt $attempt/3) — often a mirror that hasn't synced yet; retrying in 5 s"
+        sleep 5
+      done
+      if [[ $repo_ok == false ]]; then
+        warn "could not install from repos: ${REPO_PKGS[*]}"
+        warn "your mirrors are likely stale. Refresh them (CachyOS: sudo cachyos-rate-mirrors | Arch: reflector/reflector-simple), run 'sudo pacman -Syu', then rerun ./install.sh"
+      fi
+    fi
 
     # Whatever remains is AUR-only: per package, with piped answers so
     # prompts (provider selection etc.) never eat our package list.
@@ -352,8 +370,8 @@ cat <<DONE
   Full experience after next login (env vars settle everywhere).
   Themes:   omarchy theme list   |   omarchy theme set "Tokyo Night"
   Menu:     SUPER + SHIFT + M    (upstream's SUPER+SPACE stays yours)
-  Screensaver: idle for ~2.5 min — animated via ttfx if python-terminaltexteffects
-               installed; static art otherwise (see any warning above).
+  Screensaver: idle for ~2.5 min — animated via ttfx/tte when the effects
+               engine is installed; static art otherwise (see any warning above).
   Revert:   ./uninstall.sh       (restores the exact pre-install state)
 
 DONE

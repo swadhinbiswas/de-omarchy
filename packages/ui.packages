@@ -73,6 +73,7 @@ papirus-icon-theme
 # XDG default-terminal spec implementation — Arch/CachyOS repos don't carry
 # it; comes from the AUR (install.sh falls back to the AUR helper per-package).
 xdg-terminal-exec
-# ttfx — terminal-text-effects engine behind the animated Omarchy screensaver.
-# Upstream ships it in Omarchy's own pacman repo; everywhere else it's AUR-only.
+# Effects engine behind the animated Omarchy screensaver. Upstream's own repo
+# ships a Rust port named `ttfx`; this package provides the original engine as
+# `tte` with identical options — omarchy-screensaver accepts either name.
 python-terminaltexteffects

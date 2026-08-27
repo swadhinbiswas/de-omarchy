@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import qs.Commons
 import qs.Ui
 
@@ -141,20 +142,21 @@ Panel {
       loadMarketplace()
       loadShortcuts()
       loadBarLayout()
+      Qt.callLater(function() { if (panel.visible) keyCatcher.forceActiveFocus() })
     }
   }
 
   // ---------------------------------------------------------------- Loading
   function loadInstalled() {
     var om = Quickshell.env("OMARCHY_PATH") || "/usr/share/de-omarchy"
-    installedProc.command = ["bash", "-c", "omarchy-shell shell listPlugins 2>/dev/null || " + om + "/bin/omarchy-plugins list --json 2>/dev/null || omarchy plugins list --json 2>/dev/null || echo '[]'"]
+    installedProc.command = ["bash", "-c", "omarchy-shell shell listPlugins 2>/dev/null || " + Util.shellQuote(om + "/bin/omarchy-plugins") + " list --json 2>/dev/null || omarchy plugins list --json 2>/dev/null || echo '[]'"]
     installedProc.running = true
   }
 
   function loadMarketplace() {
     var home = Quickshell.env("HOME")
     var om = Quickshell.env("OMARCHY_PATH") || "/usr/share/de-omarchy"
-    marketProc.command = ["bash", "-c", "cat " + home + "/.cache/omarchy/marketplace_catalog.json 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || " + om + "/bin/omarchy-plugins marketplace --json 2>/dev/null || cat " + om + "/registry.json 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || echo '[]'"]
+    marketProc.command = ["bash", "-c", "cat " + Util.shellQuote(home + "/.cache/omarchy/marketplace_catalog.json") + " 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || " + Util.shellQuote(om + "/bin/omarchy-plugins") + " marketplace --json 2>/dev/null || cat " + Util.shellQuote(om + "/registry.json") + " 2>/dev/null | jq -c '.plugins // []' 2>/dev/null || echo '[]'"]
     marketProc.running = true
   }
 
@@ -354,7 +356,7 @@ Panel {
       root.registry.setEnabled(plugin.id, targetState)
     }
 
-    actionProc.command = ["bash", "-c", "omarchy plugins " + (targetState ? "enable" : "disable") + " '" + plugin.id + "'"]
+    actionProc.command = ["bash", "-c", "omarchy plugins " + (targetState ? "enable" : "disable") + " " + Util.shellQuote(plugin.id)]
     actionProc.targetAction = "toggle"
     actionProc.targetName = plugin.name || plugin.id
     actionProc.targetState = targetState
@@ -364,7 +366,7 @@ Panel {
   function toggleBarPlacement(plugin) {
     if (!plugin || !plugin.id) return
     if (isPluginInBar(plugin.id)) {
-      actionProc.command = ["bash", "-c", "omarchy plugins bar remove '" + plugin.id + "'"]
+      actionProc.command = ["bash", "-c", "omarchy plugins bar remove " + Util.shellQuote(plugin.id)]
       actionProc.targetAction = "bar_remove"
       actionProc.targetName = plugin.name || plugin.id
       actionProc.running = true
@@ -380,7 +382,7 @@ Panel {
     if (!plugin || !plugin.id) return
 
     showToast("Adding " + (plugin.name || plugin.id) + " to bar (" + section + ")...", "info")
-    actionProc.command = ["bash", "-c", "omarchy plugins bar add '" + plugin.id + "' " + section]
+    actionProc.command = ["bash", "-c", "omarchy plugins bar add " + Util.shellQuote(plugin.id) + " " + Util.shellQuote(section)]
     actionProc.targetAction = "bar_add"
     actionProc.targetName = plugin.name || plugin.id
     actionProc.running = true
@@ -400,12 +402,12 @@ Panel {
     if (!p) return
 
     if (keys === "") {
-      actionProc.command = ["bash", "-c", "omarchy plugins shortcut remove '" + p.id + "'"]
+      actionProc.command = ["bash", "-c", "omarchy plugins shortcut remove " + Util.shellQuote(p.id)]
       actionProc.targetAction = "shortcut_remove"
       actionProc.targetName = p.name || p.id
       actionProc.running = true
     } else {
-      actionProc.command = ["bash", "-c", "omarchy plugins shortcut set '" + p.id + "' '" + keys + "'"]
+      actionProc.command = ["bash", "-c", "omarchy plugins shortcut set " + Util.shellQuote(p.id) + " " + Util.shellQuote(keys)]
       actionProc.targetAction = "shortcut_set"
       actionProc.targetName = p.name || p.id
       actionProc.running = true
@@ -422,7 +424,7 @@ Panel {
     root.installingId = p.id
     showToast("Installing " + (p.name || p.id) + "...", "info")
 
-    actionProc.command = ["bash", "-c", "omarchy plugins install '" + p.id + "' --enable"]
+    actionProc.command = ["bash", "-c", "omarchy plugins install " + Util.shellQuote(p.id) + " --enable"]
     actionProc.targetAction = "install"
     actionProc.targetName = p.name || p.id
     actionProc.running = true
@@ -435,7 +437,7 @@ Panel {
     root.urlInput = ""
     showToast("Installing: " + url + "...", "info")
 
-    actionProc.command = ["bash", "-c", "omarchy plugins install '" + url + "' --enable"]
+    actionProc.command = ["bash", "-c", "omarchy plugins install " + Util.shellQuote(url) + " --enable"]
     actionProc.targetAction = "install"
     actionProc.targetName = url
     actionProc.running = true
@@ -453,7 +455,7 @@ Panel {
     if (!p) return
 
     showToast("Removing " + (p.name || p.id) + "...", "info")
-    actionProc.command = ["bash", "-c", "omarchy plugins remove '" + p.id + "'"]
+    actionProc.command = ["bash", "-c", "omarchy plugins remove " + Util.shellQuote(p.id)]
     actionProc.targetAction = "remove"
     actionProc.targetName = p.name || p.id
     actionProc.running = true
@@ -504,6 +506,66 @@ Panel {
     return name.substring(0, Math.min(2, name.length)).toUpperCase()
   }
 
+  PanelWindow {
+    id: panel
+    visible: root.opened
+    anchors { top: true; bottom: true; left: true; right: true }
+    color: "transparent"
+    WlrLayershell.namespace: "omarchy-plugin-manager"
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    exclusionMode: ExclusionMode.Ignore
+
+    onVisibleChanged: if (visible) Qt.callLater(function() { if (panel.visible) keyCatcher.forceActiveFocus() })
+
+    // Scrim + outside-click dismiss (mirrors clipboard/emojis pattern)
+    Rectangle {
+      anchors.fill: parent
+      color: Qt.rgba(0, 0, 0, 0.45)
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      acceptedButtons: Qt.AllButtons
+      onClicked: {
+        if (root.urlDialogOpen) { root.urlDialogOpen = false; return }
+        if (root.confirmUninstallOpen) { root.confirmUninstallOpen = false; return }
+        if (root.shortcutDialogOpen) { root.shortcutDialogOpen = false; return }
+        if (root.barSectionDialogOpen) { root.barSectionDialogOpen = false; return }
+        root.close()
+      }
+    }
+
+    // Keyboard focus target — handles Esc to close (modal-aware) and ensures
+    // the PanelWindow receives keys after mapping. Mirrors Clipboard.qml.
+    Item {
+      id: keyCatcher
+      anchors.fill: parent
+      focus: true
+      Keys.priority: Keys.BeforeItem
+      Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+          if (root.urlDialogOpen) { root.urlDialogOpen = false; event.accepted = true; return }
+          if (root.confirmUninstallOpen) { root.confirmUninstallOpen = false; event.accepted = true; return }
+          if (root.shortcutDialogOpen) { root.shortcutDialogOpen = false; event.accepted = true; return }
+          if (root.barSectionDialogOpen) { root.barSectionDialogOpen = false; event.accepted = true; return }
+          root.close()
+          event.accepted = true
+        }
+      }
+    }
+
+    Rectangle {
+      id: card
+      width: root.implicitWidth
+      height: root.implicitHeight
+      radius: 12
+      anchors.centerIn: parent
+      color: Color.popups.background
+      border.color: Color.popups.border
+      border.width: 1
+      // Swallow clicks on the card so they don't reach the dismiss MouseArea
+      MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onClicked: {} }
   // ---------------------------------------------------------------- Content Layout
   ColumnLayout {
     anchors.fill: parent
@@ -657,7 +719,7 @@ Panel {
               anchors.fill: parent
               anchors.margins: 6
               spacing: 6
-              Text { text: root.nf(root.ic.magnify); font.family: root.nfFontFamily; font.pixelSize: 11; color: Color.subtext }
+              Text { text: root.nf(root.ic.magnify); font.family: root.nfFontFamily; font.pixelSize: 11; color: Color.muted }
               TextInput {
                 id: installedSearchField
                 Layout.fillWidth: true
@@ -667,7 +729,7 @@ Panel {
                 onTextChanged: root.installedSearch = text
                 Text {
                   text: "Filter installed..."
-                  color: Color.subtext
+                  color: Color.muted
                   font.pixelSize: 11
                   visible: !installedSearchField.text
                 }
@@ -766,7 +828,7 @@ Panel {
                   }
                   Text {
                     text: modelData.id + (modelData.firstParty ? " (Built-in)" : " (User)")
-                    color: Color.subtext
+                    color: Color.muted
                     font.pixelSize: 10
                   }
                 }
@@ -785,7 +847,7 @@ Panel {
                     id: pBarText
                     anchors.centerIn: parent
                     text: inBar ? root.nf(root.ic.pin) + " In Bar" : root.nf(root.ic.plus) + " Bar"
-                    color: inBar ? "#a6e3a1" : Color.subtext
+                    color: inBar ? "#a6e3a1" : Color.muted
                     font.family: root.nfFontFamily
                     font.pixelSize: 9
                     font.bold: inBar
@@ -811,7 +873,7 @@ Panel {
                     id: pScText
                     anchors.centerIn: parent
                     text: root.nf(root.ic.keyboard) + (shortcut !== "" ? " " + shortcut : " Key")
-                    color: shortcut !== "" ? "#ff9e64" : Color.subtext
+                    color: shortcut !== "" ? "#ff9e64" : Color.muted
                     font.family: root.nfFontFamily
                     font.pixelSize: 9
                     font.bold: shortcut !== ""
@@ -889,7 +951,7 @@ Panel {
               anchors.fill: parent
               anchors.margins: 6
               spacing: 6
-              Text { text: root.nf(root.ic.globe); font.family: root.nfFontFamily; font.pixelSize: 11; color: Color.subtext }
+              Text { text: root.nf(root.ic.globe); font.family: root.nfFontFamily; font.pixelSize: 11; color: Color.muted }
               TextInput {
                 id: marketSearchField
                 Layout.fillWidth: true
@@ -899,7 +961,7 @@ Panel {
                 onTextChanged: root.marketSearch = text
                 Text {
                   text: "Search 1,000+ plugins..."
-                  color: Color.subtext
+                  color: Color.muted
                   font.pixelSize: 11
                   visible: !marketSearchField.text
                 }
@@ -1004,7 +1066,7 @@ Panel {
                   Text {
                     Layout.fillWidth: true
                     text: modelData.description || ""
-                    color: Color.subtext
+                    color: Color.muted
                     font.pixelSize: 10
                     elide: Text.ElideRight
                   }
@@ -1022,7 +1084,7 @@ Panel {
                   Text {
                     anchors.centerIn: parent
                     text: installed ? root.nf(root.ic.check) + " Installed" : (root.installingId === modelData.id ? "..." : "Install")
-                    color: installed ? "#a6e3a1" : (root.installingId === modelData.id ? Color.subtext : Color.background)
+                    color: installed ? "#a6e3a1" : (root.installingId === modelData.id ? Color.muted : Color.background)
                     font.family: root.nfFontFamily
                     font.pixelSize: 10
                     font.bold: true
@@ -1042,6 +1104,8 @@ Panel {
       }
     }
   }
+
+    } // card
 
   // Modals
   // 1. Shortcut Dialog
@@ -1078,7 +1142,7 @@ Panel {
 
         Text {
           text: "Set Hyprland keybind for '" + (root.shortcutTargetPlugin ? (root.shortcutTargetPlugin.name || root.shortcutTargetPlugin.id) : "") + "':"
-          color: Color.subtext
+          color: Color.muted
           font.pixelSize: 11
         }
 
@@ -1100,7 +1164,7 @@ Panel {
             onTextChanged: root.shortcutInput = text
             Text {
               text: "e.g. SUPER + ALT + D"
-              color: Color.subtext
+              color: Color.muted
               font.pixelSize: 11
               visible: !parent.text
             }
@@ -1160,7 +1224,7 @@ Panel {
 
         Text {
           text: "Select bar section:"
-          color: Color.subtext
+          color: Color.muted
           font.pixelSize: 11
         }
 
@@ -1245,7 +1309,7 @@ Panel {
             onTextChanged: root.urlInput = text
             Text {
               text: "https://github.com/..."
-              color: Color.subtext
+              color: Color.muted
               font.pixelSize: 11
               visible: !parent.text
             }
@@ -1320,4 +1384,6 @@ Panel {
       }
     }
   }
+
+  } // PanelWindow close
 }

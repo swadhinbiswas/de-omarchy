@@ -40,6 +40,12 @@ direct `pacman -Syu` is not blocked.
 - Install model: `install.sh` layers onto an EXISTING Arch/CachyOS system
   additively (backs up first, appends one marked block to hyprland.lua,
   never overwrites user files) instead of owning the machine
+- Screensaver effects engine: upstream's repo ships `ttfx` (Rust port of
+  terminaltexteffects); outside that repo the same engine installs from
+  python-terminaltexteffects as `tte` with identical options. omarchy-screensaver
+  resolves `ttfx` first, falls back to `tte`, and degrades to static branding
+  art when neither exists (upstream's ISO guarantees both the engine and the
+  branding file; layered installs may have neither)
 - SDDM login screen: theme + greeter config vendored verbatim from upstream
   (`default/sddm/`), deployed only when SDDM is already installed, via a new
   `/etc/sddm.conf.d/50-de-omarchy.conf` drop-in (sorts after existing confs so

@@ -661,6 +661,11 @@ ShellRoot {
           // loaded.
           if ("service" in item) item.service = shell.serviceFor(panelEntry.pluginId)
           shell.registerPanelLoader(panelEntry.pluginId, this)
+          // The Loader loaded asynchronously, so summon()'s deliverIfLoaded()
+          // (called before the instance existed) was a no-op. Now that the
+          // loader is registered, flush any pending open() payload so a
+          // summon() of a non-keepLoaded panel actually shows it.
+          shell.deliverIfLoaded(panelEntry.pluginId)
         }
         onStatusChanged: {
           if (status === Loader.Error) {

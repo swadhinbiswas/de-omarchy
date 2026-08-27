@@ -19,8 +19,13 @@ if pgrep -x "1password" >/dev/null && omarchy-cmd-present 1password; then
   ) 9>"${XDG_RUNTIME_DIR:-/tmp}/omarchy-1password-lock.lock" &
 fi
 
-# Avoid running screensaver when locked
-pkill -x ttfx 2>/dev/null || true
-# ttfx handles SIGTERM asynchronously, so keep its terminal alive until it exits.
-timeout 1s pidwait -x ttfx 2>/dev/null || true
+# Avoid running screensaver when locked. The engine is `ttfx` from upstream's
+# repo and `tte` from python-terminaltexteffects everywhere else.
+for engine in ttfx tte; do
+  pkill -x $engine 2>/dev/null || true
+done
+# The engine handles SIGTERM asynchronously, so keep its terminal alive until it exits.
+for engine in ttfx tte; do
+  timeout 1s pidwait -x $engine 2>/dev/null || true
+done
 pkill -f '[o]rg.omarchy.screensaver' 2>/dev/null || true

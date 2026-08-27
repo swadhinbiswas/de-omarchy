@@ -24,7 +24,7 @@ ensure_marketplace_catalog() {
   local force="${1:-false}"
   if [[ $force == "true" || ! -f "$MARKETPLACE_CACHE" || $(find "$MARKETPLACE_CACHE" -mmin +1440 2>/dev/null) ]]; then
     log "Fetching latest marketplace catalog from $MARKETPLACE_URL..."
-    if curl -sL --connect-timeout 5 --max-time 15 "$MARKETPLACE_URL" -o "$MARKETPLACE_CACHE.tmp" 2>/dev/null; then
+    if curl -sL --proto =https --tlsv1.2 --connect-timeout 5 --max-time 15 --fail "$MARKETPLACE_URL" -o "$MARKETPLACE_CACHE.tmp" 2>/dev/null; then
       if jq -e '.plugins | length > 0' "$MARKETPLACE_CACHE.tmp" >/dev/null 2>&1; then
         mv "$MARKETPLACE_CACHE.tmp" "$MARKETPLACE_CACHE"
       else
@@ -198,15 +198,23 @@ cmd_install() {
 
   log "Installing '$p_name' ($p_id)..."
 
-  # If an explicit installCommand is provided, use it
-  if [[ -n $p_cmd && $p_cmd != "null" && $p_cmd != "" ]]; then
+  # installCommand is untrusted shell from the marketplace catalog (remote).
+  # Prefer the explicit repo path via omarchy-plugin-add which validates the
+  # manifest; only fall back to installCommand with user-visible warning.
+  if [[ -n $p_cmd && $p_cmd != "null" && $p_cmd != "" && -z $p_repo ]]; then
+    warn "Catalog entry for '$p_id' uses installCommand (arbitrary shell). Review:"
+    warn "  $p_cmd"
+    # If a repo URL is also present, prefer the safe path instead of eval.
     if [[ $p_cmd != *"--yes"* ]]; then
       p_cmd="$p_cmd --yes"
     fi
     log "Executing install command: $p_cmd"
     mkdir -p "$PLUGINS_DIR"
-    eval "$p_cmd"
-  # If monorepo manifestPath is specified (e.g. omni/manifest.json)
+    ( cd "$OMARCHY_PATH" && bash -c "$p_cmd" )
+  elif [[ -n $p_cmd && $p_cmd != "null" && $p_cmd != "" ]]; then
+    # Both repo and installCommand present — use repo (safer) and ignore installCommand.
+    warn "Ignoring installCommand for '$p_id' in favor of repo: $p_repo"
+    "$OMARCHY_PATH/bin/omarchy-plugin-add" "$p_repo" --yes
   elif [[ -n $p_manifest && -n $p_repo ]]; then
     local subfolder="${p_manifest%/*}"
     local tmp_stage="$PLUGINS_DIR/.stage.$p_id.$$"

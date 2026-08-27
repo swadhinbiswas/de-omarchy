@@ -8,7 +8,10 @@ screensaver_in_focus() {
 
 exit_screensaver() {
   hyprctl eval 'hl.config({ cursor = { invisible = false } })' &>/dev/null || hyprctl keyword cursor:invisible false &>/dev/null || true
+  # Upstream's own pacman repo ships the Rust port as `ttfx`; everywhere else
+  # the engine comes from python-terminaltexteffects as `tte`.
   pkill -x ttfx 2>/dev/null
+  pkill -x tte 2>/dev/null
   pkill -f '[o]rg.omarchy.screensaver' 2>/dev/null
   exit 0
 }
@@ -23,9 +26,9 @@ hyprctl eval 'hl.config({ cursor = { invisible = true } })' &>/dev/null || hyprc
 tty=$(tty 2>/dev/null)
 
 # Terminals allocate the pty at the default 80x24 and only resize it once the
-# compositor has told the window how big it is. ttfx measures the terminal once,
-# at startup, so starting it before the resize lands sizes an 80x24 canvas and
-# paints it into the corner of a fullscreen window.
+# compositor has told the window how big it is. The engine measures the
+# terminal once, at startup, so starting it before the resize lands sizes an
+# 80x24 canvas and paints it into the corner of a fullscreen window.
 wait_for_terminal_resize() {
   local deadline=$((SECONDS + 2))
   while ((SECONDS < deadline)) && [[ $(stty size 2>/dev/null) == "24 80" ]]; do
@@ -35,19 +38,30 @@ wait_for_terminal_resize() {
 
 wait_for_terminal_resize
 
+# Engine resolution — the ONE structural delta from upstream. Upstream's repo
+# ships `ttfx` (a dependency-free Rust port, swapped in for `tte` in 4e31b61a);
+# outside that repo the same engine installs from python-terminaltexteffects as
+# `tte`, with identical option names, defaults, and exit codes — so the
+# invocation below is unchanged apart from the command name.
+if command -v ttfx >/dev/null 2>&1; then
+  SCREENSAVER_ENGINE=ttfx
+elif command -v tte >/dev/null 2>&1; then
+  SCREENSAVER_ENGINE=tte
+fi
+
 # Branding art: the user's copy first, the shipped logo as fallback. Without
-# an input file ttfx (or any renderer below) would error on every loop
-# iteration, so bail out instead.
+# an input file the engine would error on every loop iteration, so bail out
+# instead (upstream's ISO provisions the branding file; a layered install may
+# not have it).
 SCREENSAVER_INPUT="$HOME/.config/omarchy/branding/screensaver.txt"
 [[ -f $SCREENSAVER_INPUT ]] || SCREENSAVER_INPUT="${OMARCHY_PATH:-/usr/share/de-omarchy}/logo.txt"
 
-# ttfx ships only in Omarchy's own pacman repo (not Arch/CachyOS repos, not
-# the AUR), so a de-omarchy install may not have it. Render the branding art
-# statically instead of looping on command-not-found forever.
+# No engine installed: render the branding art statically instead of spinning
+# on command-not-found forever. Upstream never hits this branch.
 run_static_screensaver() {
   clear
   cat "$SCREENSAVER_INPUT"
-  printf '\n\n  (animated effects need ttfx — showing static art)\n'
+  printf '\n\n  (animated effects need ttfx or tte — showing static art)\n'
   while screensaver_in_focus; do
     if read -n1 -t 1; then
       exit_screensaver
@@ -60,16 +74,16 @@ if [[ ! -f $SCREENSAVER_INPUT ]]; then
   exit_screensaver
 fi
 
-if ! command -v ttfx >/dev/null 2>&1; then
+if [[ -z ${SCREENSAVER_ENGINE:-} ]]; then
   run_static_screensaver
 fi
 
 while true; do
-  ttfx -i "$SCREENSAVER_INPUT" \
+  "$SCREENSAVER_ENGINE" -i "$SCREENSAVER_INPUT" \
     --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c\
     --random-effect --no-eol --no-restore-cursor &
 
-  while pgrep -t "${tty#/dev/}" -x ttfx >/dev/null; do
+  while pgrep -t "${tty#/dev/}" -x "$SCREENSAVER_ENGINE" >/dev/null; do
     if read -n1 -t 1 || ! screensaver_in_focus; then
       exit_screensaver
     fi
